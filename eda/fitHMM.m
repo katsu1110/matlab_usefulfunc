@@ -63,7 +63,7 @@ end
 
 % estimate the states
 likelystates = hmmviterbi(seq, ttr, emt);
-[dr1, dr2] = state_dur(likelystates);
+[dr] = state_dur(likelystates, n_comp);
 
 % firing rate in each state
 fr = emt2fr(emt);
@@ -86,7 +86,7 @@ fr_err = CIestimate(fr_err);
 
 % structurize
 hmm_estimate = struct('n', n_comp, 'transition', ttr, 'emission', emt, 'fr', fr, ...
-    'loglikelihood', likeli + 0.5, 'likelystates', likelystates, 'duration0', dr1, 'duration1', dr2, ...
+    'loglikelihood', likeli + 0.5, 'likelystates', likelystates, 'duration', dr, ...
     'variance_explained', varexp, 'err_transition', ttr_err, 'err_emission', emt_err, 'err_fr', fr_err);
 hmm_estimate = hmm_estimate(1);
 
@@ -98,23 +98,57 @@ for i = 1:size(size(emt,2))
     fr(:,i) = fr(:,i) + (i - 1)*emt(:,i);
 end
 
-function [dr1, dr2] = state_dur(states)
+function [dr] = state_dur(states, n_comp)
 % measure the duration of each state
-if states(1) == 1
-    dr1 = 1; dr2 = [];
-elseif states(1) == 2
-    dr1 = []; dr2 = 1;
+for n = 1:n_comp
+    dr.state(n).duration = [];
 end
-for i = 2:length(states)
-    if states(i)==1 && states(i-1)==1
-        dr1(end) = dr1(end) + 1;
-    elseif states(i)==1 && states(i-1)==2
-        dr1 = [dr1, 1];
-    elseif states(i)==2 && states(i-1)==1
-        dr2 = [dr2, 1];
-    elseif states(i)==2 && states(i-1)==2
-        dr2(end) = dr2(end) + 1;
-    end
+switch n_comp
+    case 1
+        dr.state(1).duration = length(states);
+    case 2
+        if states(1) == 1
+            dr1 = 1; dr2 = [];
+        elseif states(1) == 2
+            dr1 = []; dr2 = 1;
+        end
+        for i = 2:length(states)
+            if states(i)==1 && states(i-1)==1
+                dr1(end) = dr1(end) + 1;
+            elseif states(i)==1 && states(i-1)==2
+                dr1 = [dr1, 1];
+            elseif states(i)==2 && states(i-1)==1
+                dr2 = [dr2, 1];
+            elseif states(i)==2 && states(i-1)==2
+                dr2(end) = dr2(end) + 1;
+            end
+        end
+        dr.state(1).duration = dr1; dr.state(2).duration = dr2;
+    case 3
+        if states(1) == 1
+            dr1 = 1; dr2 = []; dr3 = [];
+        elseif states(1) == 2
+            dr1 = []; dr2 = 1; dr3 = [];
+        elseif states(1) == 3
+            dr1 = []; dr2 = []; dr3 = 1;
+        end
+        for i = 2:length(states)
+            if states(i)==1 && states(i-1)==1
+                dr1(end) = dr1(end) + 1;
+            elseif states(i)==1 && states(i-1)~=1
+                dr1 = [dr1, 1];
+            elseif states(i)==2 && states(i-1)~=2
+                dr2 = [dr2, 1];
+            elseif states(i)==2 && states(i-1)==2
+                dr2(end) = dr2(end) + 1;
+            elseif states(i)==3 && states(i-1)==3
+                dr3(end) = dr3(end) + 1;
+            elseif states(i)==3 && states(i-1)~=3
+                dr3 = [dr3, 1];
+            end
+        end
+        dr.state(1).duration = dr1; dr.state(2).duration = dr2;
+        dr.state(3).duration = dr3;
 end
 
 function ci = CIestimate(cellmat)
