@@ -42,11 +42,11 @@ axis([range range])
 set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')
 set(gca, 'XTick', [range(1) range(end)])
 set(gca, 'YTick', [range(1) range(end)])
-axis square
+% axis square
 
 % stats
 dist = range(end) - range(1);
-[~,p] = ttest(x,y);
-text(0.8*dist+range(1),0.05*dist+range(1),['p_{ttest} = ' num2str(p)])
+% [~,p] = ttest(x,y);
+text(0.65*dist+range(1),0.1*dist+range(1),['n=' num2str(length(x))])
 p = signrank(x,y);
-text(0.8*dist+range(1),0.15*dist+range(1),['p_{signrank} = ' num2str(p)])
+text(0.65*dist+range(1),0.2*dist+range(1),['p=' num2str(p)])
