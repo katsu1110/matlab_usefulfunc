@@ -53,8 +53,10 @@ set(gca, 'YTick', [range(1) range(end)])
 % stats
 dist = range(end) - range(1);
 % [~,p] = ttest(x,y);
-text(0.65*dist+range(1),0.1*dist+range(1),['n=' num2str(nob)])
+text(0.7*dist+range(1),0.1*dist+range(1),['n=' num2str(nob)])
 p = signrank(mat(:,1),mat(:,2));
-text(0.65*dist+range(1),0.2*dist+range(1),['p1=' num2str(pval_inequality(p))])
+text(0.7*dist+range(1),0.15*dist+range(1),['p1=' num2str(pval_inequality(p))])
 p = signrank(mat(:,3),mat(:,4));
-text(0.65*dist+range(1),0.3*dist+range(1),['p2=' num2str(pval_inequality(p))])
+text(0.7*dist+range(1),0.2*dist+range(1),['p2=' num2str(pval_inequality(p))])
+p = signrank(mean(mat(:,[1 2]), 2), mean(mat(:,[3 4]), 2));
+text(0.7*dist+range(1),0.25*dist+range(1),['p1vs2=' num2str(pval_inequality(p))])
