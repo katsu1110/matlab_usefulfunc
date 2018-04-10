@@ -77,9 +77,23 @@ overallsd = overallsd/sum(noverall);
 grandmean = 1000*mean(overallmean(:));
 grandsd = 1000*mean(overallsd(:));
 for n = 1:nstm
+    rcsub.stm(n).occurrence = noverall(n);
     rcsub.stm(n).mean = 1000*overallmean(n, :);
     rcsub.stm(n).sd = 1000*overallsd(n,:);
-     rcsub.stm(n).occurrence = noverall(n);
+    % upsample 
+    rcsub.stm(n).mean = interp1(1:nframeperwnd, rcsub.stm(n).mean, ...
+                linspace(1, nframeperwnd, wnd), 'linear');
+    rcsub.stm(n).sd = interp1(1:nframeperwnd, rcsub.stm(n).sd, ...
+        linspace(1, nframeperwnd, wnd), 'linear');
+    % smoothing (4ms boxcar convolution)
+    rcsub.stm(n).mean = boxcar_smooth(rcsub.stm(n).mean, 4);
+    rcsub.stm(n).sd = boxcar_smooth(rcsub.stm(n).sd, 4);
+    % metric
+    [~, rcsub.stm(n).peak_t] = max(abs(rcsub.stm(n).mean));  % peak time (ms)
+    rcsub.stm(n).peak = rcsub.stm(n).mean(rcsub.stm(n).peak_t); % peak value
+    abs_sd = abs(rcsub.stm(n).sd);
+    abs_sd = abs_sd - mean(abs_sd(1:4)); % baseline correction
+    rcsub.stm(n).latency = find(abs_sd > 0.5*max(abs_sd), 1, 'first'); % latency
 end
 
 % visualization -----------------------------
@@ -115,5 +129,5 @@ if plot_flag==1
         leg{n} = ['stm:' num2str(unique_stm(n))];
     end
     legend(pl, leg, 'location', 'northeast'); legend('boxoff')
+    set(h, 'Name', ['ntr = ' num2str(ntr)], 'NumberTitle', 'off')
 end
-    
