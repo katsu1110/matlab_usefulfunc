@@ -48,86 +48,85 @@ nframeperwnd = floor(ndata*wnd/stmdur);
 % initialize output structure 
 unique_stm = unique(round(1000*stmMat(:))/1000);
 nstm = length(unique_stm);
-rcsub = struct('stm', []);
+rcsub = struct('stm', [], 'res', [], 'res_sd', [], 'latency', []);
 for n = 1:nstm
     rcsub.stm(n).val = unique_stm(n);
-    rcsub.stm(n).rcmat = [];
+    rcsub.stm(n).idx = [];
 end
+disp('accumulating responses...')
+c = 1;
 for i = 1:ntr
     stpos = 1;
     while stpos + nframeperwnd - 1 <= ndata
         stmidx = unique_stm == upstmMat(i, stpos);
-        rcsub.stm(stmidx).rcmat = ...
-            [rcsub.stm(stmidx).rcmat; actMat(i, stpos:stpos+nframeperwnd-1)];
+        rcsub.stm(stmidx).idx = [rcsub.stm(stmidx).idx; c];
+        c = c + 1;
+        rcsub.res = [rcsub.res; actMat(i, stpos:stpos+nframeperwnd-1)];
         stpos = stpos + 1;
     end
 end
 
-% mean & SD of responses relative to the grand mean & SD
-overallmean = zeros(nstm, nframeperwnd);
-overallsd = zeros(nstm, nframeperwnd);
-noverall = zeros(1, nstm);
+% grand mean of responses
+grandmean = 1000*mean(rcsub.res(:));
+
+% response elicited by stimulus
+m = nan(nstm, wnd);
 for n = 1:nstm
-    noverall(n) = size(rcsub.stm(n).rcmat, 1);
-    overallmean(n, :) = noverall(n)*mean(rcsub.stm(n).rcmat, 1);
-    overallsd(n, :) = noverall(n)*std(rcsub.stm(n).rcmat, [], 1);
-end
-overallmean = overallmean/sum(noverall);
-overallsd = overallsd/sum(noverall);
-grandmean = 1000*mean(overallmean(:));
-grandsd = 1000*mean(overallsd(:));
-for n = 1:nstm
-    rcsub.stm(n).occurrence = noverall(n);
-    rcsub.stm(n).mean = 1000*overallmean(n, :);
-    rcsub.stm(n).sd = 1000*overallsd(n,:);
-    % upsample 
-    rcsub.stm(n).mean = interp1(1:nframeperwnd, rcsub.stm(n).mean, ...
+    rcsub.stm(n).mean = 1000*mean(rcsub.res(rcsub.stm(n).idx, :), 1);
+    rcsub.stm(n).sem = 1000*std(rcsub.res(rcsub.stm(n).idx, :), [], 1)...
+        /sqrt(length(rcsub.stm(n).idx));    
+    % upsample so that 1 frame becomes 1 ms 
+     rcsub.stm(n).mean = interp1(1:nframeperwnd, rcsub.stm(n).mean, ...
                 linspace(1, nframeperwnd, wnd), 'linear');
-    rcsub.stm(n).sd = interp1(1:nframeperwnd, rcsub.stm(n).sd, ...
-        linspace(1, nframeperwnd, wnd), 'linear');
+     rcsub.stm(n).sem = interp1(1:nframeperwnd, rcsub.stm(n).sem, ...
+                linspace(1, nframeperwnd, wnd), 'linear');    
     % smoothing (4ms boxcar convolution)
     rcsub.stm(n).mean = boxcar_smooth(rcsub.stm(n).mean, 4);
-    rcsub.stm(n).sd = boxcar_smooth(rcsub.stm(n).sd, 4);
+    rcsub.stm(n).sem = boxcar_smooth(rcsub.stm(n).sem, 4);
+    m(n, :) = rcsub.stm(n).mean;
     % metric
     [~, rcsub.stm(n).peak_t] = max(abs(rcsub.stm(n).mean));  % peak time (ms)
     rcsub.stm(n).peak = rcsub.stm(n).mean(rcsub.stm(n).peak_t); % peak value
-    abs_sd = abs(rcsub.stm(n).sd);
-    abs_sd = abs_sd - mean(abs_sd(1:4)); % baseline correction
-    rcsub.stm(n).latency = find(abs_sd > 0.5*max(abs_sd), 1, 'first'); % latency
 end
+
+% latency estimate
+sdvec  = std(m, [], 1);
+rcsub.res_sd = sdvec - mean(sdvec(1:20)); % baseline correction
+rcsub.latency = find(rcsub.res_sd > 0.5*max(rcsub.res_sd), 1, 'first'); % latency
 
 % visualization -----------------------------
 if plot_flag==1
     close all;
-    col = lines(nstm);
+    col = jet(nstm);
     h = figure;
+    % mean in each stimulus
     subplot(1,2,1)
-    plot([0 nframeperwnd+1], grandmean.*[1 1], ':k')
+    plot([0 wnd+1], grandmean.*[1 1], ':k')
     hold on;
-    xlim([0 nframeperwnd+1])
+    xlim([0 wnd+1])
     ylabel({'response', '(mean)'})
     xlabel('time (ms)')
-    set(gca, 'XTick', [0 nframeperwnd+1], 'XTickLabel', [0 wnd])
-    set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')
-    subplot(1,2,2)
-    plot([0 nframeperwnd+1], grandsd.*[1 1], ':k')
-    hold on;
-    xlim([0 nframeperwnd+1])
-    ylabel('(SD)')
-    xlabel('time (ms)')
-    set(gca, 'XTick', [0 nframeperwnd+1], 'XTickLabel', [0 wnd])
-    set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')
+    set(gca, 'XTick', [0 wnd+1], 'XTickLabel', [0 wnd])
+    set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')    
     pl = nan(1, nstm);
     leg = cell(1, nstm);
     for n = 1:nstm
         subplot(1,2,1)
         hold on;
-        plot(1:nframeperwnd, rcsub.stm(n).mean, '-', 'color', col(n,:))
-        subplot(1,2,2)
-        hold on;
-        pl(n) = plot(1:nframeperwnd, rcsub.stm(n).sd, '-', 'color', col(n,:));
+        pl(n) = plot(1:wnd, rcsub.stm(n).mean, '-', 'color', col(n,:));
         leg{n} = ['stm:' num2str(unique_stm(n))];
     end
     legend(pl, leg, 'location', 'northeast'); legend('boxoff')
+    % sd
+    subplot(1,2,2)
+    plot(1:wnd, rcsub.res_sd, '-r') 
+    hold on;
+    yy = get(gca, 'YLim');
+    plot(rcsub.latency*[1 1], yy, ':k')
+    xlim([0 wnd+1])
+    ylabel('(SD)')
+    xlabel('time (ms)')
+    set(gca, 'XTick', [0 wnd+1], 'XTickLabel', [0 wnd])
+    set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')
     set(h, 'Name', ['ntr = ' num2str(ntr)], 'NumberTitle', 'off')
 end
