@@ -13,10 +13,10 @@ function interaction_plot(mat)
 % written by Katsuhisa (05.04.18)
 % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-params0 = {30, 'filled','marker','o','markerfacecolor','k','markerfacealpha',0.8,...
-    'markeredgecolor','w','markeredgealpha',0.8};
-params1 = {30, 'filled','marker','^','markerfacecolor','k','markerfacealpha',0.8,...
-    'markeredgecolor','w','markeredgealpha',0.8};
+params0 = {30, 'filled','marker','o','markerfacecolor','k','markerfacealpha',0.4,...
+    'markeredgecolor','w','markeredgealpha',0.4};
+params1 = {30, 'filled','marker','^','markerfacecolor','k','markerfacealpha',0.4,...
+    'markeredgecolor','w','markeredgealpha',0.4};
 
 % range
 minval = min(mat(:));
@@ -30,17 +30,17 @@ hold on;
 plot([0, 0], range, '-','color',0.4*ones(1,3))
 hold on;
 plot(range, range, '-','color',0.4*ones(1,3))
-hold on;
 
 % scatter
 nob = size(mat, 1);
 for i = 1:nob
-    plot(mat(i,[1 3]), mat(i,[2 4]), '-k')
+    hold on;
+    p = plot(mat(i,[1 3]), mat(i,[2 4]), '-k');
+    p.Color(4) = 0.4;
     hold on;
     scatter(mat(i,1), mat(i,2), params0{:})
     hold on;
     scatter(mat(i,3), mat(i,4), params1{:})
-    hold on;
 end
 
 % axis
@@ -53,10 +53,10 @@ set(gca, 'YTick', [range(1) range(end)])
 % stats
 dist = range(end) - range(1);
 % [~,p] = ttest(x,y);
-text(0.7*dist+range(1),0.1*dist+range(1),['n=' num2str(nob)])
+text(0.6*dist+range(1),0.05*dist+range(1),['n=' num2str(nob)])
 p = signrank(mat(:,1),mat(:,2));
-text(0.7*dist+range(1),0.15*dist+range(1),['p1=' num2str(pval_inequality(p))])
+text(0.6*dist+range(1),0.15*dist+range(1),['p1=' num2str(pval_inequality(p))])
 p = signrank(mat(:,3),mat(:,4));
-text(0.7*dist+range(1),0.2*dist+range(1),['p2=' num2str(pval_inequality(p))])
+text(0.6*dist+range(1),0.25*dist+range(1),['p2=' num2str(pval_inequality(p))])
 p = signrank(mean(mat(:,[1 2]), 2), mean(mat(:,[3 4]), 2));
-text(0.7*dist+range(1),0.25*dist+range(1),['p1vs2=' num2str(pval_inequality(p))])
+text(0.6*dist+range(1),0.35*dist+range(1),['p1vs2=' num2str(pval_inequality(p))])
