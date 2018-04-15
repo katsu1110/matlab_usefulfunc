@@ -1,15 +1,18 @@
-function [hmm_estimate] = fitHMM(seq, ntr, n_state)
+function hmm_estimate = fitHMM(seq, ntr, n_state)
 % fit the Hidden Markov Model (HMM) to sequence of (presumably) spike counts
 % in order to estimate the HMM parameters
 % INPUT: seq ... vector or matrix of spike counts (row: channel, column: integer vector)
 %        ntr ... the number of trials
-%        n_state ... the number of component (1, 2 or 3)
+%        n_state ... the number of component
 % OUTPUT: hmm_estimate ... output structure
 %         n: the number of states, transition: transition matrix
 %         emission: emission matrix, fr: firing rate in each state
 %         likelihood: model likelihood, likelystates: estimated states
 %         duration: duration of each state, variance_explained: variance
 %         explained, err_...: confidence intervals of the HMM parameters
+%
+% NOTE: when the input seq is spike-count, it is highly recommended that
+%       the raw spike-count is square-root-transformed to stabilize the variance
 %
 % written by Katsuhisa (14.04.18)
 % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
