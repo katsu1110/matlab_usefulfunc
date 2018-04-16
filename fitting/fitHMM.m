@@ -30,7 +30,10 @@ if nc > 1
     seq = mean(seq, 1);
 end
 
-% to avoid 0
+% integer & avoid 0
+oneseq = seq;
+minseq = min(seq); maxseq = max(seq);
+seq = round(100*(seq - minseq)/(maxseq - minseq));
 seq = seq + 1;
 
 % fit HMM 10 times to select sets of parameters yielding the largest likelihood 
@@ -64,7 +67,7 @@ emt = emt_temp{maxidx};
 likelystates = hmmviterbi(seq, ttr, emt);
 
 % fr & duration of each state, variance explained
-seq = seq - 1;
+seq = oneseq;
 fr = zeros(nc, n_state);
 frvec = seq;
 for n = 1:n_state
