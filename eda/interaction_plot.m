@@ -1,4 +1,4 @@
-function interaction_plot(mat)
+function interaction_plot(mat, unity, varargin)
 % scatter plot to visualize an interaction effect
 % INPUT: mat ... matrix where row represents observations and
 %        column must be four-dimension vector (column 1 - 4)
@@ -13,30 +13,40 @@ function interaction_plot(mat)
 % written by Katsuhisa (05.04.18)
 % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-params0 = {30, 'filled','marker','o','markerfacecolor','k','markerfacealpha',0.4,...
+if nargin<2
+    unity = 1;
+end
+map = parula(5);
+params0 = {50, 'filled','marker','o','markerfacecolor',map(2,:),'markerfacealpha',0.4,...
     'markeredgecolor','w','markeredgealpha',0.4};
-params1 = {30, 'filled','marker','^','markerfacecolor','k','markerfacealpha',0.4,...
+params1 = {50, 'filled','marker','^','markerfacecolor',map(4,:),'markerfacealpha',0.4,...
     'markeredgecolor','w','markeredgealpha',0.4};
 
 % range
-minval = min(mat(:));
-maxval = max(mat(:));
-dist = maxval - minval;
-range = [minval - 0.05*dist, maxval + 0.05*dist];
+xminval = min(min(mat(:, [1, 3])));
+xmaxval = max(max(mat(:, [1, 3])));
+yminval = min(min(mat(:, [2, 4])));
+ymaxval = max(max(mat(:, [2, 4])));
+xdist = xmaxval - xminval;
+xrange = [xminval - 0.05*xdist, xmaxval + 0.05*xdist];
+ydist = ymaxval - yminval;
+yrange = [yminval - 0.05*ydist, ymaxval + 0.05*ydist];
 
 % unity
-plot(range, [0, 0], '-','color',0.4*ones(1,3))
+plot(xrange, [0, 0], '-','color',0.4*ones(1,3))
 hold on;
-plot([0, 0], range, '-','color',0.4*ones(1,3))
-hold on;
-plot(range, range, '-','color',0.4*ones(1,3))
+plot([0, 0], yrange, '-','color',0.4*ones(1,3))
+if unity==1
+    hold on;
+    plot(xrange, yrange, '-','color',0.4*ones(1,3))
+end
 
 % scatter
 nob = size(mat, 1);
 for i = 1:nob
     hold on;
-    p = plot(mat(i,[1 3]), mat(i,[2 4]), '-k');
-    p.Color(4) = 0.4;
+    p = plot(mat(i,[1 3]), mat(i,[2 4]), '-','color',map(3,:),'linewidth',0.1);
+    p.Color(4) = 0.1;
     hold on;
     scatter(mat(i,1), mat(i,2), params0{:})
     hold on;
@@ -44,19 +54,20 @@ for i = 1:nob
 end
 
 % axis
-axis([range range])
+axis([xrange yrange])
 set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')
-set(gca, 'XTick', [range(1) range(end)])
-set(gca, 'YTick', [range(1) range(end)])
+set(gca, 'XTick', [xrange(1) xrange(end)])
+set(gca, 'YTick', [yrange(1) yrange(end)])
 % axis square
 
 % stats
-dist = range(end) - range(1);
+xdist = xrange(end) - xrange(1);
+ydist = yrange(end) - yrange(1);
 % [~,p] = ttest(x,y);
-text(0.6*dist+range(1),0.05*dist+range(1),['n=' num2str(nob)])
+text(0.6*xdist+xrange(1),0.05*ydist+yrange(1),['n=' num2str(nob)])
 p = signrank(mat(:,1),mat(:,2));
-text(0.6*dist+range(1),0.15*dist+range(1),['p1=' num2str(pval_inequality(p))])
+text(0.6*xdist+xrange(1),0.15*ydist+yrange(1),['p1=' num2str(pval_inequality(p))])
 p = signrank(mat(:,3),mat(:,4));
-text(0.6*dist+range(1),0.25*dist+range(1),['p2=' num2str(pval_inequality(p))])
+text(0.6*xdist+xrange(1),0.25*ydist+yrange(1),['p2=' num2str(pval_inequality(p))])
 p = signrank(mean(mat(:,[1 2]), 2), mean(mat(:,[3 4]), 2));
-text(0.6*dist+range(1),0.35*dist+range(1),['p1vs2=' num2str(pval_inequality(p))])
+text(0.6*xdist+xrange(1),0.35*ydist+yrange(1),['p1vs2=' num2str(pval_inequality(p))])
