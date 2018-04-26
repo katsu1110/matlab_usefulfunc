@@ -45,7 +45,7 @@ end
 nob = size(mat, 1);
 for i = 1:nob
     hold on;
-    p = plot(mat(i,[1 3]), mat(i,[2 4]), '-','color',map(3,:),'linewidth',0.1);
+    p = plot(mat(i,[1 3]), mat(i,[2 4]), '-','color',map(3,:),'linewidth',0.25);
     p.Color(4) = 0.1;
     hold on;
     scatter(mat(i,1), mat(i,2), params0{:})
@@ -66,8 +66,15 @@ ydist = yrange(end) - yrange(1);
 % [~,p] = ttest(x,y);
 text(0.6*xdist+xrange(1),0.05*ydist+yrange(1),['n=' num2str(nob)])
 p = signrank(mat(:,1),mat(:,2));
-text(0.6*xdist+xrange(1),0.15*ydist+yrange(1),['p1=' num2str(pval_inequality(p))])
+text(0.6*xdist+xrange(1),0.15*ydist+yrange(1),['p1' psign(p) num2str(pval_inequality(p))])
 p = signrank(mat(:,3),mat(:,4));
-text(0.6*xdist+xrange(1),0.25*ydist+yrange(1),['p2=' num2str(pval_inequality(p))])
+text(0.6*xdist+xrange(1),0.25*ydist+yrange(1),['p2' psign(p) num2str(pval_inequality(p))])
 p = signrank(mean(mat(:,[1 2]), 2), mean(mat(:,[3 4]), 2));
-text(0.6*xdist+xrange(1),0.35*ydist+yrange(1),['p1vs2=' num2str(pval_inequality(p))])
+text(0.6*xdist+xrange(1),0.35*ydist+yrange(1),['p1vs2' psign(p) num2str(pval_inequality(p))])
+
+function s = psign(p)
+if p < 0.05
+    s = '<';
+else
+    s = '=';
+end
