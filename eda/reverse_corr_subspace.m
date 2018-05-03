@@ -87,6 +87,7 @@ for n = 1:nstm
     % metric
     [~, rcsub.stm(n).peak_t] = max(abs(rcsub.stm(n).mean));  % peak time (ms)
     rcsub.stm(n).peak = rcsub.stm(n).mean(rcsub.stm(n).peak_t); % peak value
+    rcsub.stm(n).totalcounts = sum(rcsub.stm(n).mean)/wnd; % counts per frame
 end
 
 % latency estimate
