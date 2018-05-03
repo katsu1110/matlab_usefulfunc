@@ -32,8 +32,9 @@ end
 
 % integer & avoid 0
 oneseq = seq;
-minseq = min(seq); maxseq = max(seq);
-seq = round(100*(seq - minseq)/(maxseq - minseq));
+% minseq = min(seq); maxseq = max(seq);
+% seq = round(100*(seq - minseq)/(maxseq - minseq));
+seq = round(seq);
 seq = seq + 1;
 
 % fit HMM 10 times to select sets of parameters yielding the largest likelihood 

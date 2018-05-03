@@ -53,7 +53,7 @@ for n = 1:nstm
     rcsub.stm(n).val = unique_stm(n);
     rcsub.stm(n).idx = [];
 end
-disp('accumulating responses...')
+% disp('accumulating responses...')
 c = 1;
 for i = 1:ntr
     stpos = 1;

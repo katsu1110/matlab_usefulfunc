@@ -18,6 +18,7 @@ if size(seq, 1) > 1
     end
     seq = mean(seq, 1);
 end
+seq = seq + 1; % to avoid zero
 
 % fit GPFA  
 gprMdl = fitrgp([1:length(seq)]', seq', 'Basis', 'linear', 'KernelFunction', 'squaredexponential');
@@ -32,4 +33,4 @@ predseq = resubPredict(gprMdl);
 gpr_estimate.Mdl = gprMdl;
 gpr_estimate.loss = L;
 gpr_estimate.processed_seq = seq;
-gpr_estimate.pred = predseq;
+gpr_estimate.pred = predseq';
