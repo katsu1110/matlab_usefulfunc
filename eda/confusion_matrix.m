@@ -23,6 +23,9 @@ cm = nan(lenv, lenv);
 pm = nan(lenv, lenv);
 for r = 1:lenv
     for c = 1:lenv
+        nans = isnan(vecs{r}) || isnan(vecs{c});
+        vecs{r}(nans) = [];
+        vecs{c}(nans) = [];
         [cm(r,c), pm(r,c)] = corr(vecs{r}, vecs{c}, 'type', corrtype);
     end
 end
