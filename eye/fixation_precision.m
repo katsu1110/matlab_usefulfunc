@@ -50,7 +50,9 @@ p_area = ratio*xrange*yrange;
 
 % PCA analysis ==============================
 % covariance matrix
-C = cov([x', y']);
+normx = x - mean(x);
+normy = y - mean(y);
+C = cov([normx', normy']);
 
 % eigenvalue and eigenvector
 [V, D] = eig(C);
@@ -59,12 +61,12 @@ C = cov([x', y']);
 col = mod(find(D==max(D(:))), 2);
 switch col
     case 0
-            theta = atan2(V(2,2), V(1,2))*180/pi;
+        theta = atan2(V(2,2), V(1,2))*180/pi;
     case 1
-            theta = atan2(V(2,1), V(1,1))*180/pi;
+        theta = atan2(V(2,1), V(1,1))*180/pi;
 end
 if theta < 0
-        theta = theta + 180;
+    theta = theta + 180;
 end
 
 % disp(['theta: ' num2str(theta)])
