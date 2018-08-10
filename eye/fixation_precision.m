@@ -35,6 +35,7 @@ Np = N/sum(N(:));
 % cumulative probability
 Np_des = sort(Np(:),'descend');
 cum = 0;
+idx = length(Np_des);
 for t = 1:length(Np_des)
     cum = cum + Np_des(t);
     if cum >= p
