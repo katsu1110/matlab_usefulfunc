@@ -26,26 +26,25 @@ function fp = fixation_precision(x, y, p)
 if nargin < 3; p = 0.75; end
 
 % 2D histogram
-[edgesX2,edgesY2,N] = ndhist(x, y);
+[edgesX2,edgesY2,N] = ndhist(x, y, 'bins', 1.2);
 close(gcf);
-xrange = max(edgesX2) - min(edgesX2) + 1;
-yrange = max(edgesY2) - min(edgesY2) + 1;
 
 % convert counts into probability
 Np = N/sum(N(:));
 
 % cumulative probability
 Np_des = sort(Np(:),'descend');
-cum = zeros(1,length(Np_des)-1);
-cum(1) = Np_des(1);
-for t = 2:length(Np_des)-1
-    cum(t) = Np_des(t) + cum(t-1);
+cum = 0;
+for t = 1:length(Np_des)
+    cum = cum + Np_des(t);
+    if cum >= p
+        idx = t;
+        break
+    end
 end
-idx = find(cum <= p, 1, 'first');
-ratio = idx/(length(Np_des)-1);
 
 % convert the computed ratio into view angle [degree^2]
-p_area = ratio*xrange*yrange;
+p_area = idx*(edgesX2(2) - edgesX2(1))*(edgesY2(2) - edgesY2(1));
 % disp(['fixation precision: ' num2str(p_area) ' degree^2'])
 
 % PCA analysis ==============================
