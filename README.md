@@ -4,3 +4,4 @@ Custom Matlab functions to make my life easier:
 - Format ... functions for formatting publication figures
 - Fitting ... functions to fit behavioral or neural data
 - Eye ... functions to deal with eye-data obtained from an eye-tracker
+- Neuro ... functions to analyze neural data
