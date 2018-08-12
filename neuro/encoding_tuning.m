@@ -52,13 +52,13 @@ for i = 1:ntr
     for u = 1:lenuni
         y = zeros(ntr-1, 1);
         y(stm(trs)==tu.unistm(u)) = 1;
-        SvmModels{u} = fitcsvm(res(trs), y, 'Standardize', true);
+        SvmModels{u} = fitcsvm(res(trs), y);
     end
     % SVM score in each model
     scores = zeros(lenuni, 1);
     for u = 1:lenuni
         [~, s] = predict(SvmModels{u}, res(i));
-        scores(u) = s(:,2);
+        scores(u) = abs(s(:,1));
     end    
     % model prediction of stimulus type
     [~, maxidx] = max(scores);
@@ -67,12 +67,12 @@ end
 tu.discriminability = 0;
 for i = 1:lenuni
     for j = 1:lenuni
-        pij = sum(stm==i & pred==j)/ntr;
-        pi = sum(stm==i)/ntr;
-        pj = sum(pred==j)/ntr;
-        if pij > 0 && pi > 0 && pj > 0
+        Pij = sum(stm==i & pred==j)/ntr;
+        Pi = sum(stm==i)/ntr;
+        Pj = sum(pred==j)/ntr;
+        if Pij > 0 && Pi > 0 && Pj > 0
             tu.discriminability = tu.discriminability ...
-                + pij*log2(pij/(pi*pj));
+                + Pij*log2(Pij/(Pi*Pj));
         end
     end
 end
