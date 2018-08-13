@@ -11,7 +11,7 @@ function tu = encoding_tuning(stm, res)
 % - reliability (var average / var all)
 % - selectivity (max average res - min / mean)
 % - discriminability (mutual information derived from decoding)
-% - metabolic cost of encoding (entropy of the response)
+% - metabolic cost of encoding (response unpredictability)
 %
 
 ntr = size(stm, 1);
@@ -44,25 +44,16 @@ tu.selectivity = (max(tu.mean) - min(tu.mean))/mean([max(tu.mean), min(tu.mean)]
 % discriminability
 pred = zeros(ntr, 1);
 tr = 1:ntr;
+t = templateSVM('Standardize', 1);
 for i = 1:ntr
     % leave-one-out
     trs = tr(~ismember(tr, i));
-    % train a optimal linear decoder (one vs all)
-    SvmModels = cell(1, lenuni);
-    for u = 1:lenuni
-        y = zeros(ntr-1, 1);
-        y(stm(trs)==tu.unistm(u)) = 1;
-        SvmModels{u} = fitcsvm(res(trs), y);
-    end
-    % SVM score in each model
-    scores = zeros(lenuni, 1);
-    for u = 1:lenuni
-        [~, s] = predict(SvmModels{u}, res(i));
-        scores(u) = abs(s(:,1));
-    end    
+
+    % multiclass svm classifier
+    SvmModel = fitcecoc(res(trs), stm(trs), 'Learners', t, 'Coding', 'onevsall');
+    
     % model prediction of stimulus type
-    [~, maxidx] = max(scores);
-    pred(i) = tu.unistm(maxidx);
+    pred(i) = predict(SvmModel, res(i));
 end
 tu.discriminability = 0;
 for i = 1:lenuni
@@ -78,19 +69,16 @@ for i = 1:lenuni
 end
 
 %%
-% metabolic cost
-[~, binedges] = histcounts(res, lenuni);
-binres = res;
+% metabolic cost (response entropy = unpredictability)
+pred = zeros(ntr, 1);
 for i = 1:ntr
-    for u = 1:lenuni
-        if res(i) >= binedges(u) && res(i) < binedges(u+1)
-            binres(i) = u;
-        end
-    end
+    % leave-one-out
+    trs = tr(~ismember(tr, i));
+    
+    % train a optimal linear decoder (regression)
+    beta = glmfit(stm(trs), res(trs), 'normal', 'link', 'identity', 'constant', 'on');
+    
+    % trial-by-trial prediction
+    pred(i) = glmval(beta, stm(i), 'identity');
 end
-tu.metabcost = 0;
-for u = 1:lenuni
-    pu = sum(binres==u)/ntr;
-    tu.metabcost = tu.metabcost - ...
-        pu*log2(pu);
-end
+tu.metabcost = var(abs(res - pred))/var(res);
