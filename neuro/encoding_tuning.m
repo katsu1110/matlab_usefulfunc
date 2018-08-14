@@ -79,6 +79,6 @@ for i = 1:ntr
     beta = glmfit(stm(trs), res(trs), 'normal', 'link', 'identity', 'constant', 'on');
     
     % trial-by-trial prediction
-    pred(i) = glmval(beta, stm(i), 'identity');
+    pred(i) = glmval(beta, stm(i), 'identity', 'constant', 'on');
 end
 tu.metabcost = var(abs(res - pred))/var(res);
