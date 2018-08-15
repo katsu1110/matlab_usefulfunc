@@ -1,4 +1,4 @@
-function data = eyepos_vs_ps(x, y, p)
+function [data, ceyes] = eyepos_vs_ps(x, y, p)
 % check whether eye positions are affected by pupil size
 % after Choe et al., 2016
 % INPUT:
@@ -8,31 +8,62 @@ function data = eyepos_vs_ps(x, y, p)
 %
 % OUTPUT:
 % data ... output structure
+% ceyes ... corrected eye traces
 %
+
+%%
+% % trial average
+% [xme, yme, pme] = trial_average(x, y, p, tr);
 
 %%
 % correlation
 data.original = compute_correlation(x, y, p);
 
+%% 
+% linear regression
+data.reg(1).xparas = glmfit(p', x', 'normal', 'link', 'identity', 'constant', 'on');
+data.reg(1).yparas = glmfit(p', y', 'normal', 'link', 'identity', 'constant', 'on');
+
+x_new = x' - glmval(data.reg(1).xparas, ...
+    p', 'identity', 'constant', 'on');
+y_new = y' - glmval(data.reg(1).yparas, ...
+    p', 'identity', 'constant', 'on');
+ceyes = [x_new, y_new];
+data.reg(1).corrected = compute_correlation(x_new', y_new', p);
+
 %%
 % 2nd polynomial regression
-data.polyreg_xparas = polyfit(p, x, 2);
-data.correct_x = x - polyval(data.polyreg_xparas, p);
-data.polyreg_yparas = polyfit(p, y, 2);
-data.correct_y = y - polyval(data.polyreg_yparas, p);
+data.reg(2).xparas = polyfit(p', x', 2);
+data.reg(2).yparas = polyfit(p', y', 2);
 
-%% 
-% check no correlation between corrected eye pos and ps
-data.corrected = compute_correlation(data.correct_x, data.correct_y, p);
+x_new = x' - polyval(data.reg(2).xparas, p');
+y_new = y' - polyval(data.reg(2).yparas, p');
+ceyes = [ceyes, x_new, y_new];
+data.reg(2).corrected = compute_correlation(x_new', y_new', p);
 
-function out = compute_correlation(x, y, p)
-[r, pval] = corrcoef(x, p);
+ceyes = ceyes';
+
+% function [xme, yme, pme] = trial_average(x, y, p, tr)
+% unitr = unique(tr);
+% lentr = length(unitr);
+% xme = nan(1, lentr);
+% yme = nan(1, lentr);
+% pme = nan(1, lentr);
+% for i = 1:lentr
+%     idx = tr == i;
+%     xme(i) = mean(x(idx));
+%     yme(i) = mean(y(idx));
+%     pme(i) = mean(p(idx));
+% end
+
+function out = compute_correlation(xme, yme, pme)
+[r, pval] = corrcoef(xme, pme);
 out.Pearson.r(1) = r(1,2);
 out.Pearson.p(1) = pval(1,2);
-[r, pval] = corrcoef(y, p);
+[r, pval] = corrcoef(yme, pme);
 out.Pearson.r(2) = r(1,2);
 out.Pearson.p(2) = pval(1,2);
 [out.Spearman.r(1), out.Spearman.p(1)]...
-    = corr(x', p', 'type', 'Spearman');
+    = corr(xme', pme', 'type', 'Spearman');
 [out.Spearman.r(2), out.Spearman.p(2)]...
-    = corr(y', p', 'type', 'Spearman');
+    = corr(yme', pme', 'type', 'Spearman');

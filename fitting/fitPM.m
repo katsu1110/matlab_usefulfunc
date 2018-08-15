@@ -95,8 +95,7 @@ data.variance_explained = variance_explained;
 % visualization
 if fig==1
     close all;
-    figure;        
-
+    figure;      
     plot(fitx, fity, '-k')
     hold on;
     plot(x, y,'ok')
