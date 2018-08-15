@@ -20,6 +20,8 @@ function ms = microsaccade_detection(eye_x, eye_y, samplingRate, algorithm, fig)
 %
 % +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+%%
+% deal with inputs
 if nargin < 2 
     error('At least eye-positions for x and y must be given as the first and second input arguments.')
 end
@@ -27,6 +29,7 @@ if nargin < 3; samplingRate = 500; end
 if nargin < 4; algorithm = 'Nienborg'; end
 if nargin < 5; fig = 1; end
 
+%%
 % match the length of eye_x and eye_y, if different
 if length(eye_x) ~= length(eye_y)
   disp('eye-position x and y have different length.')
@@ -40,51 +43,20 @@ if length(eye_x) ~= length(eye_y)
     end
     disp('Length of eye-position x and y were matched.')
 end
+len_eye = length(eye_x);
 
+%%
+% define a detection algorithm
 switch lower(algorithm)
     case  'nienborg' % Nienborg & Cumming (2006)
-        n = length(eye_x);
-        % compute saccadic velocity
-        vel_x = [0 diff(eye_x)*samplingRate];
-        vel_y = [0 diff(eye_y)*samplingRate];
-        vel = sqrt(vel_x.^2 + vel_y.^2);
-        
-        % start: 1, end: -1
-        thre = 12; % degree / sec
-        event = zeros(1,n);
-        event(vel > thre) = 1;      
-        diff_event = [0 diff(event)];
-        sacc_start = find(diff_event==1);
-        sacc_end = find(diff_event==-1) - 1;
-
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-        
-        % remove saccade events with amplitude 0
-        zeroamp = sacc_start==sacc_end;
-        sacc_start(zeroamp) = [];
-        sacc_end(zeroamp) = [];
-        
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-               
-        % store basic parameters
-        ms.algorithm = 'Nienborg & Cumming (2006)';
-        ms.threshold.velocity = thre;
+        ms.algorithm.name = 'Nienborg & Cumming (2006)';
+        ms.algorithm.velocity = 12; % deg/s
+        ms.algorithm.smooth = 0;
+        ms.algorithm.acceleration = nan;
+        ms.algorithm.minduration = nan;
 
       case 'engbert' % Engbert & Kliegl (2003); Engbert & Mergenthaler (2006)
         % transform eye-positions into velocities
-        len_eye = length(eye_x);
         vel_x = zeros(1,len_eye);
         vel_y = zeros(1,len_eye);
         dt = 1/samplingRate;
@@ -102,156 +74,81 @@ switch lower(algorithm)
         gamma = 6; % default used in the original paper
         thre_x = gamma*sigma(1);
         thre_y = gamma*sigma(2);
-
-        % detect mscade events           
-        event = zeros(1,len_eye);
-        event((vel_x/thre_x).^2 + (vel_y/thre_y).^2 > 1) = 1;
-        diff_event = [0 diff(event)];
-
-        % amplitude, peak velocity, duration
-        sacc_start = find(diff_event==1) ;
-        sacc_end = find(diff_event==-1) - 1; 
-
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-            sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-            sacc_end(end-delta+1:end)  = [];
-        end
-
-        % remove saccade events with amplitude 0
-        zeroamp = find(sacc_start==sacc_end);
-        sacc_start(zeroamp) = [];
-        sacc_end(zeroamp) = [];
         
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-        
-        % store basic info
+        % store algorithm info
         ms.algorithm = 'Engbert & Kliegl (2003)';
-        ms.threshold.velocity = [thre_x, thre_y];
+        ms.algorithm.velocity = [thre_x, thre_y]; % deg/s
+        ms.algorithm.smooth = 1;
+        ms.algorithm.acceleration = nan;
+        ms.algorithm.minduration = 6; % ms
             
     case 'joshi' % Joshi et al., 2016
-        n = length(eye_x);
-        % compute saccadic velocity
-        vel_x = [0 diff(eye_x)*samplingRate];
-        vel_y = [0 diff(eye_y)*samplingRate];
-        vel = sqrt(vel_x.^2 + vel_y.^2);
-        
-        % start: 1, end: -1
-        thre = 15; % degree / sec
-        event = zeros(1,n);
-        event(vel >= thre) = 1;      
-        diff_event = [0 diff(event)];
-        sacc_start = find(diff_event==1);
-        sacc_end = find(diff_event==-1) - 1;
-        
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-        
-       % remove saccade events with amplitude 0
-        zeroamp = find(sacc_start==sacc_end);
-        sacc_start(zeroamp) = [];
-        sacc_end(zeroamp) = [];
-        
-        % criteria of duration
-        for l = 1:length(sacc_start)
-            dur = (sacc_end(l) - sacc_start(l) + 1)/samplingRate;
-            if dur < 0.006
-                event(sacc_start(l):sacc_end(l)) = 0;
-            end
-        end
-
-        % redefine event
-        diff_event = [0 diff(event)];        
-        
-        % start and end of saccade
-        sacc_start = find(diff_event==1);
-        sacc_end = find(diff_event==-1) -1;
-        
-        % equalize start and end again
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-        
-        % remove saccade events with amplitude 0
-        zeroamp = find(sacc_start==sacc_end);
-        sacc_start(zeroamp) = [];
-        sacc_end(zeroamp) = [];
-        
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-        
-        % store basic info
         ms.algorithm = 'Joshi et al (2016)';
-        ms.threshold.velocity = thre;
-        ms.threshold.duration = 0.006;
+        ms.algorithm.velocity = 15; % deg/s
+        ms.algorithm.smooth = 0;
+        ms.algorithm.acceleration = nan;
+        ms.algorithm.minduration = 6; % ms
         
-   case 'hafed' % Hafed et al., 2011
-        n = length(eye_x);
-        % compute saccadic velocity
-        vel_x = [0 diff(eye_x)*samplingRate];
-        vel_y = [0 diff(eye_y)*samplingRate];
-        vel = sqrt(vel_x.^2 + vel_y.^2);
-        
-        % compute acceleration
-        acc_x = [0 diff(vel_x)*samplingRate];
-        acc_y = [0 diff(vel_y)*samplingRate];
-        acc = sqrt(acc_x.^2 + acc_y.^2);
-                
-        % start: 1, end: -1
-        thre = 8; % degree / sec
-        thre2 = 550; % degree /sec^2
-        event = zeros(1,n);
-        event(vel >= thre & acc > thre2) = 1;      
-        diff_event = [0 diff(event)];
-        sacc_start = find(diff_event==1);
-        sacc_end = find(diff_event==-1) - 1;
-                
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-            
-        % remove saccade events with amplitude 0
-        zeroamp = find(sacc_start==sacc_end);
-        sacc_start(zeroamp) = [];
-        sacc_end(zeroamp) = [];
-        
-        % equalize start and end
-        delta = abs(length(sacc_start) - length(sacc_end));
-        if length(sacc_start) > length(sacc_end)
-                sacc_start(end-delta+1:end) = [];
-        elseif length(sacc_start) < length(sacc_end)
-                sacc_end(end-delta+1:end)  = [];
-        end
-        
-        % store basic info
+   case 'hafed' % Hafed et al., 2011        
         ms.algorithm = 'Hafed et al (2011)';
-        ms.threshold.velocity = thre;
-        ms.threshold.acceleration = thre2;
+        ms.algorithm.velocity = 8; % deg/s
+        ms.algorithm.smooth = 0;
+        ms.algorithm.acceleration = 550;
+        ms.algorithm.minduration = nan; % ms
+end
+
+%%
+% detection ms by velocity
+event = zeros(1,len_eye);
+if ms.algorithm.smooth == 0
+    % compute instantaneous eye velocity
+    vel_x = [0 diff(eye_x)*samplingRate];
+    vel_y = [0 diff(eye_y)*samplingRate];
+    vel = sqrt(vel_x.^2 + vel_y.^2);
+    event(vel > ms.algorithm.velocity) = 1;      
+elseif ms.algorithm.smooth == 1
+    % detect ms events           
+    event((vel_x/ms.algorithm.velocity(1)).^2 + ...
+        (vel_y/ms.algorithm.velocity(2)).^2 > 1) = 1;
+end
+
+% detection ms by acceleration
+if ~isnan(ms.algorithm.acceleration)
+    vel = sqrt(vel_x.^2 + vel_y.^2);
+    acc = [0 diff(vel)];
+    event(acc > ms.algorithm.acceleration) = 1;
+end
+
+% detection ms by minimum duration
+if ~isnan(ms.algorithm.minduration)
+    minsamples = 1;
+else
+    minsamples = mindur.minduration*dt*1000;
+end
+
+% apply minimum duration criteria
+pos = 1;
+sacc_start = [];
+sacc_end = [];
+while pos < len_eye
+   idx = find(event(pos:end)==1, 1, 'first');
+   s = 1;
+   stop = 0;
+   while stop==0
+       if event(idx+s)==1
+           s = s + 1;
+       else
+           s = s - 1;
+           stop = 1;
+       end
+   end
+   if s < minsamples
+       event(idx:idx+s) = 0;
+   else
+       sacc_start = [sacc_start, idx];
+       sacc_end = [sacc_end, idx+s];
+   end
+   pos = idx + s + 1;
 end
 
 % store eye-data into a structure
@@ -260,38 +157,29 @@ if isempty(sacc_start)
 else
     ms.counts = length(sacc_start);
 end
-ms.amp = zeros(1, ms.counts);
-ms.peakv = zeros(1, ms.counts);
-ms.duration = zeros(1, ms.counts);
-ms.angle = zeros(1, ms.counts);
 if ms.counts > 0
+    ms.amp = zeros(1, ms.counts);
+    ms.peakv = zeros(1, ms.counts);
+    ms.duration = zeros(1, ms.counts);
+    ms.angle = zeros(1, ms.counts);
     for i = 1:length(sacc_start)
-        k = 0;
-        temp_amp = [];
-        temp_pv = [];
-        angle = [];
-        while sacc_start(i) + k < sacc_end(i)
-            vx = eye_x(sacc_start(i)+k+1) - eye_x(sacc_start(i)+k);
-            vy = eye_y(sacc_start(i)+k+1) - eye_y(sacc_start(i)+k);
-            angle = [angle atan2(vy, vx)*180/pi]; 
-            temp_amp = [temp_amp sqrt(vx^2 + vy^2)];
-            temp_pv = [temp_pv max(sqrt(vel_x(sacc_start(i)+k:sacc_start(i)+k+1).^2 + vel_y(sacc_start(i)+k:sacc_start(i)+k+1).^2))];
-            k = k + 1;
-        end
-        ms.amp(i) = sum(temp_amp);
-        ms.peakv(i) = max(temp_pv);
-        ms.duration(i) = k/samplingRate;
-        ms.angle(i) = median(angle);
-%         ms.angle(i) = atan2(eye_y(sacc_end(i)) - eye_y(sacc_start(i)), ...
-%             eye_x(sacc_end(i)) - eye_x(sacc_start(i)))*180/pi;
+        ms.amp(i) = sqrt((eye_x(sacc_end(i)) - eye_x(sacc_start(i))).^2 ...
+            + (eye_y(sacc_end(i)) - eye_y(sacc_start(i))).^2);
+        ms.peakv(i) = max(sqrt(diff(eye_x(sacc_start(i):sacc_end(i))).^2 ...
+            + diff(eye_y(sacc_start(i):sacc_end(i))).^2))*samplingRate;
+        ms.duration(i) = (sacc_end(i) - sacc_start(i))/samplingRate;
+        ms.angle(i) = atan2(eye_y(sacc_end(i)) - eye_y(sacc_start(i)), ...
+            eye_x(sacc_end(i)) - eye_x(sacc_start(i)))*180/pi;
     end
+else
+    ms.amp = nan;
+    ms.peakv = nan;
+    ms.duration = nan;
+    ms.angle = nan;
 end
-            
-ms.eye_x = eye_x;
-ms.eye_y = eye_y;
 ms.velocity_x = vel_x;
 ms.velocity_y = vel_y;
-ms.event = diff_event;
+ms.event = event;
 
 % validate with plot
 if fig==1
@@ -317,21 +205,13 @@ if fig==1
 
       % velocity space
       subplot(4,6,17:18)
-      switch lower(algorithm)
-          case 'engbert'
-              plot([-thre_x thre_x],[-thre_y -thre_y],'--k','lineWidth',0.5)
-              hold on;
-              plot([-thre_x thre_x],[thre_y thre_y],'--k','lineWidth',0.5)
-              hold on;
-              plot([-thre_x -thre_x],[-thre_y thre_y],'--k','lineWidth',0.5)
-              hold on;
-              plot([thre_x thre_x],[-thre_y thre_y],'--k','lineWidth',0.5)
-          otherwise
-              th = 0:pi/50:2*pi;
-              xunit = thre * cos(th);
-              yunit = thre * sin(th);
-              plot(xunit, yunit,'--k','lineWidth',0.5);
+      if ms.algorithm.smooth == 1
+        thre = sqrt(thre_x^2 + thre_y^2);
       end
+      th = 0:pi/50:2*pi;
+      xunit = thre * cos(th);
+      yunit = thre * sin(th);
+      plot(xunit, yunit,'--k','lineWidth',0.5);
       hold on;
       plot(vel_x, vel_y, '-','Color',[0.5 0.5 0.5])
       xlabel('horizontal velocity (deg/s)')
@@ -364,7 +244,9 @@ if fig==1
       end
 
       subplot(4,6,[19 20])
-      plot(ms.amp, ms.peakv,'ok'),lsline
+      plot(ms.amp, ms.peakv,'ok')
+      set(gca, 'XScale', 'log')
+      set(gca, 'YScale', 'log')
       xlabel('amplitude (deg)')
       ylabel('peak velocity (deg/s)')
       set(gca,'box','off'); set(gca,'TickDir','out');  
