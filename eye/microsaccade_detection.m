@@ -59,38 +59,35 @@ switch lower(algorithm)
         % transform eye-positions into velocities
         vel_x = zeros(1,len_eye);
         vel_y = zeros(1,len_eye);
-        dt = 1/samplingRate;
         for i = 3:len_eye-2
-              vel_x(i) = (eye_x(i+2)+eye_x(i+1)-eye_x(i-1)-eye_x(i-2))...
-                    /(6*dt);
-              vel_y(i) = (eye_y(i+2)+eye_y(i+1)-eye_y(i-1)-eye_y(i-2))...
-                    /(6*dt);
+              vel_x(i) = samplingRate*(eye_x(i+2)+eye_x(i+1)-eye_x(i-1)-eye_x(i-2))/6;
+              vel_y(i) = samplingRate*(eye_y(i+2)+eye_y(i+1)-eye_y(i-1)-eye_y(i-2))/6;
         end
 
         % SD of the velocity distribution as the detection threshold
         sigma = zeros(2,1);
         sigma(1) = median(vel_x.^2) - (median(vel_x))^2;
         sigma(2) = median(vel_y.^2) - (median(vel_y))^2;
-        gamma = 6; % default used in the original paper
+        gamma = 2; % default used in the original paper was 6
         thre_x = gamma*sigma(1);
         thre_y = gamma*sigma(2);
         
         % store algorithm info
-        ms.algorithm = 'Engbert & Kliegl (2003)';
+        ms.algorithm.name = 'Engbert & Kliegl (2003)';
         ms.algorithm.velocity = [thre_x, thre_y]; % deg/s
         ms.algorithm.smooth = 1;
         ms.algorithm.acceleration = nan;
         ms.algorithm.minduration = 6; % ms
             
     case 'joshi' % Joshi et al., 2016
-        ms.algorithm = 'Joshi et al (2016)';
+        ms.algorithm.name = 'Joshi et al (2016)';
         ms.algorithm.velocity = 15; % deg/s
         ms.algorithm.smooth = 0;
         ms.algorithm.acceleration = nan;
         ms.algorithm.minduration = 6; % ms
         
    case 'hafed' % Hafed et al., 2011        
-        ms.algorithm = 'Hafed et al (2011)';
+        ms.algorithm.name = 'Hafed et al (2011)';
         ms.algorithm.velocity = 8; % deg/s
         ms.algorithm.smooth = 0;
         ms.algorithm.acceleration = 550;
@@ -107,9 +104,9 @@ if ms.algorithm.smooth == 0
     vel = sqrt(vel_x.^2 + vel_y.^2);
     event(vel > ms.algorithm.velocity) = 1;      
 elseif ms.algorithm.smooth == 1
-    % detect ms events           
-    event((vel_x/ms.algorithm.velocity(1)).^2 + ...
-        (vel_y/ms.algorithm.velocity(2)).^2 > 1) = 1;
+    % detect ms events based on the ellipse equation          
+    event((vel_x.^2)/(ms.algorithm.velocity(1)^2) + ...
+        (vel_y.^2)/(ms.algorithm.velocity(2)^2) > 1) = 1;
 end
 
 % detection ms by acceleration
@@ -120,39 +117,19 @@ if ~isnan(ms.algorithm.acceleration)
 end
 
 % detection ms by minimum duration
-if ~isnan(ms.algorithm.minduration)
-    minsamples = 1;
-else
-    minsamples = mindur.minduration*dt*1000;
+minsamples = ceil(ms.algorithm.minduration/((1/samplingRate)*1000));
+if isnan(minsamples)
+    minsamples = 2;
 end
 
 % apply minimum duration criteria
-pos = 1;
-sacc_start = [];
-sacc_end = [];
-while pos < len_eye
-   idx = find(event(pos:end)==1, 1, 'first');
-   s = 1;
-   stop = 0;
-   while stop==0
-       if event(idx+s)==1
-           s = s + 1;
-       else
-           s = s - 1;
-           stop = 1;
-       end
-   end
-   if s < minsamples
-       event(idx:idx+s) = 0;
-   else
-       sacc_start = [sacc_start, idx];
-       sacc_end = [sacc_end, idx+s];
-   end
-   pos = idx + s + 1;
-end
+[sacc_start, sacc_end, count] = consecutive_ones(event);
+sacc_start(count < minsamples) = [];
+sacc_end(count < minsamples) = [];
+count(count < minsamples) = [];
 
 % store eye-data into a structure
-if isempty(sacc_start)
+if isempty(count)
     ms.counts = 0;
 else
     ms.counts = length(sacc_start);
@@ -165,8 +142,8 @@ if ms.counts > 0
     for i = 1:length(sacc_start)
         ms.amp(i) = sqrt((eye_x(sacc_end(i)) - eye_x(sacc_start(i))).^2 ...
             + (eye_y(sacc_end(i)) - eye_y(sacc_start(i))).^2);
-        ms.peakv(i) = max(sqrt(diff(eye_x(sacc_start(i):sacc_end(i))).^2 ...
-            + diff(eye_y(sacc_start(i):sacc_end(i))).^2))*samplingRate;
+        ms.peakv(i) = max([sqrt(diff(eye_x(sacc_start(i):sacc_end(i))).^2 ...
+            + diff(eye_y(sacc_start(i):sacc_end(i))).^2)])*samplingRate;
         ms.duration(i) = (sacc_end(i) - sacc_start(i))/samplingRate;
         ms.angle(i) = atan2(eye_y(sacc_end(i)) - eye_y(sacc_start(i)), ...
             eye_x(sacc_end(i)) - eye_x(sacc_start(i)))*180/pi;
@@ -183,8 +160,13 @@ ms.event = event;
 
 % validate with plot
 if fig==1
+    if ms.counts == 0
+        disp('no saccade is detected.')
+        return
+    end
       figure;
-      % time domain
+      lw = 0.25;
+      % time domaincsa
       subplot(4,6,1:6)
       time = [1:length(eye_x)]/samplingRate;
       plot(time, eye_x, '-','Color',[0.5 0.5 0.5])
@@ -197,30 +179,31 @@ if fig==1
       set(gca,'box','off'); set(gca,'TickDir','out');  
 
       % position space
-      subplot(4,6,13:14)
-      plot(eye_x,eye_y,'-','Color',[0.5 0.5 0.5])
+      subplot(4,6,13:15)
+      plot(eye_x,eye_y,'-','Color',[0.5 0.5 0.5], 'linewidth', lw)
       xlabel('horizontal position (deg)')
       ylabel('vertical position (deg)')
       set(gca,'box','off'); set(gca,'TickDir','out');  
 
       % velocity space
-      subplot(4,6,17:18)
-      if ms.algorithm.smooth == 1
-        thre = sqrt(thre_x^2 + thre_y^2);
-      end
-      th = 0:pi/50:2*pi;
-      xunit = thre * cos(th);
-      yunit = thre * sin(th);
-      plot(xunit, yunit,'--k','lineWidth',0.5);
+      subplot(4,6,16:18)
+      plot(vel_x, vel_y, '-','Color',[0.5 0.5 0.5], 'linewidth', lw)
       hold on;
-      plot(vel_x, vel_y, '-','Color',[0.5 0.5 0.5])
+      if ms.algorithm.smooth == 1
+          draw_ellipse(thre_x, thre_y, [0 0])
+      else
+          th = 0:pi/50:2*pi;
+          xunit = ms.algorithm.velocity * cos(th);
+          yunit = ms.algorithm.velocity * sin(th);
+          plot(xunit, yunit,'--k');
+      end
       xlabel('horizontal velocity (deg/s)')
       ylabel('vertical velocity (deg/s)')
       set(gca,'box','off'); set(gca,'TickDir','out');  
 
       % draw saccadic traces
-      map = lines(length(sacc_start));
-      for i = 1:length(sacc_start)
+      map = lines(ms.counts);
+      for i = 1:ms.counts
           k = 0;
           while sacc_start(i) + k < sacc_end(i)
               subplot(4,6,1:6)
@@ -234,17 +217,17 @@ if fig==1
               subplot(4,6,13:15)
               hold on;
               plot([eye_x(sacc_start(i)+k) eye_x(sacc_start(i)+k+1)], [eye_y(sacc_start(i)+k) eye_y(sacc_start(i)+k+1)],...
-                      '-','Color',map(i,:),'lineWidth',1.5)
+                      '-','Color',map(i,:), 'linewidth', lw)
               subplot(4,6,16:18)
               hold on;
               plot([vel_x(sacc_start(i)+k) vel_x(sacc_start(i)+k+1)], [vel_y(sacc_start(i)+k) vel_y(sacc_start(i)+k+1)],...
-                      '-','Color',map(i,:),'lineWidth',1.5)
+                      '-','Color',map(i,:), 'linewidth', lw)
               k = k + 1;
           end
       end
 
       subplot(4,6,[19 20])
-      plot(ms.amp, ms.peakv,'ok')
+      plot(ms.amp, ms.peakv,'.k')
       set(gca, 'XScale', 'log')
       set(gca, 'YScale', 'log')
       xlabel('amplitude (deg)')
@@ -260,3 +243,29 @@ if fig==1
       xlabel('duration (ms)')
       set(gca,'box','off'); set(gca,'TickDir','out'); 
 end
+
+% subfunction
+function [start_idx, end_idx, count] = consecutive_ones(vector)
+% https://de.mathworks.com/matlabcentral/fileexchange/34914-consecutive-ones
+%[Function Description]
+%Finds the number of consecutive ones in a binary signal. Returns the
+%starting and ending points of the consecutive set and also the count. Since it
+%does not use any for loop. It is pretty fast
+%
+%[Input]
+%vector = A binary signal
+%[Output]
+%
+%Author - Shreyes
+
+temp = diff([0 vector 0]);
+start_idx = find(temp == 1);
+end_idx = find(temp == -1);
+count = end_idx - start_idx;
+end_idx = end_idx -1;
+
+function draw_ellipse(h, v, cc)
+t=-pi:0.01:pi;
+x = cc(1) + h*cos(t);
+y = cc(2) + v*sin(t);
+plot(x,y, '--k')
