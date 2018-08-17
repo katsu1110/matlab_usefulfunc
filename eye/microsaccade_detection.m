@@ -139,14 +139,22 @@ if ms.counts > 0
     ms.peakv = zeros(1, ms.counts);
     ms.duration = zeros(1, ms.counts);
     ms.angle = zeros(1, ms.counts);
-    for i = 1:length(sacc_start)
-        ms.amp(i) = sqrt((eye_x(sacc_end(i)) - eye_x(sacc_start(i))).^2 ...
-            + (eye_y(sacc_end(i)) - eye_y(sacc_start(i))).^2);
-        ms.peakv(i) = max([sqrt(diff(eye_x(sacc_start(i):sacc_end(i))).^2 ...
-            + diff(eye_y(sacc_start(i):sacc_end(i))).^2)])*samplingRate;
+    for i = 1:ms.counts
+        amp = [];
+        ang = [];
+        j = 0;
+        while sacc_start(i) + j < sacc_end(i)
+            amp = [amp, sqrt((eye_x(sacc_start(i)+j+1) - eye_x(sacc_start(i)+j)).^2 ...
+            + (eye_y(sacc_start(i)+j+1) - eye_y(sacc_start(i)+j)).^2)];
+            ang = [ang, atan2(eye_y(sacc_start(i)+j+1) - eye_y(sacc_start(i)+j), ...
+            eye_x(sacc_start(i)+j+1) - eye_x(sacc_start(i)+j))*180/pi];
+            j = j + 1;
+        end
+        ms.amp(i) = sum(amp);        
+        ms.angle(i) = median(ang);
+        ms.peakv(i) = max([sqrt(vel_x(sacc_start(i):sacc_end(i)).^2 ...
+            + vel_y(sacc_start(i):sacc_end(i)).^2)]);
         ms.duration(i) = (sacc_end(i) - sacc_start(i))/samplingRate;
-        ms.angle(i) = atan2(eye_y(sacc_end(i)) - eye_y(sacc_start(i)), ...
-            eye_x(sacc_end(i)) - eye_x(sacc_start(i)))*180/pi;
     end
 else
     ms.amp = nan;
