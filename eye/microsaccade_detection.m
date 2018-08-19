@@ -68,7 +68,7 @@ switch lower(algorithm)
         sigma = zeros(2,1);
         sigma(1) = median(vel_x.^2) - (median(vel_x))^2;
         sigma(2) = median(vel_y.^2) - (median(vel_y))^2;
-        gamma = 2; % default used in the original paper was 6
+        gamma = 5; % default used in the original paper was 5 or 6
         thre_x = gamma*sigma(1);
         thre_y = gamma*sigma(2);
         
