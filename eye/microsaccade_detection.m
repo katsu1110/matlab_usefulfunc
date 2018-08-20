@@ -47,6 +47,7 @@ len_eye = length(eye_x);
 
 %%
 % define a detection algorithm
+ms.algorithm.maxamp = 1; % deg
 switch lower(algorithm)
     case  'nienborg' % Nienborg & Cumming (2006)
         ms.algorithm.name = 'Nienborg & Cumming (2006)';
@@ -68,7 +69,7 @@ switch lower(algorithm)
         sigma = zeros(2,1);
         sigma(1) = median(vel_x.^2) - (median(vel_x))^2;
         sigma(2) = median(vel_y.^2) - (median(vel_y))^2;
-        gamma = 5; % default used in the original paper was 5 or 6
+        gamma = 6; % default used in the original paper was 5 or 6
         thre_x = gamma*sigma(1);
         thre_y = gamma*sigma(2);
         
@@ -155,6 +156,14 @@ if ms.counts > 0
         ms.peakv(i) = max([sqrt(vel_x(sacc_start(i):sacc_end(i)).^2 ...
             + vel_y(sacc_start(i):sacc_end(i)).^2)]);
         ms.duration(i) = (sacc_end(i) - sacc_start(i))/samplingRate;
+    end
+    
+    % maximum amplitude criteria
+    idx = ms.amp <= ms.algorithm.maxamp;
+    ms.counts = sum(idx==1);
+    fieldnames = {'amp', 'peakv', 'duration', 'angle'};
+    for i = 1:length(fieldnames)
+        ms.(fieldnames{i}) = ms.(fieldnames{i})(idx);
     end
 else
     ms.amp = nan;
