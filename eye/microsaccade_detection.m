@@ -155,7 +155,7 @@ if ms.counts > 0
         ms.angle(i) = median(ang);
         ms.peakv(i) = max([sqrt(vel_x(sacc_start(i):sacc_end(i)).^2 ...
             + vel_y(sacc_start(i):sacc_end(i)).^2)]);
-        ms.duration(i) = (sacc_end(i) - sacc_start(i))/samplingRate;
+        ms.duration(i) = (count(i))/samplingRate;
     end
     
     % maximum amplitude criteria
