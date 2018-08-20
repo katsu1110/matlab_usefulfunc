@@ -153,6 +153,10 @@ if ms.counts > 0
         end
         ms.amp(i) = sum(amp);        
         ms.angle(i) = median(ang);
+%         ms.amp(i) = sqrt((eye_x(sacc_end(i)) - eye_x(sacc_start(i))).^2 ...
+%             + (eye_y(sacc_end(i)) - eye_y(sacc_start(i))).^2);
+%         ms.angle(i) = atan2(eye_y(sacc_end(i)) - eye_y(sacc_start(i)), ...
+%             eye_x(sacc_end(i)) - eye_x(sacc_start(i)))*180/pi;
         ms.peakv(i) = max([sqrt(vel_x(sacc_start(i):sacc_end(i)).^2 ...
             + vel_y(sacc_start(i):sacc_end(i)).^2)]);
         ms.duration(i) = (count(i))/samplingRate;
