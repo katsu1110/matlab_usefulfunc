@@ -158,13 +158,13 @@ if ms.counts > 0
         ms.duration(i) = (count(i))/samplingRate;
     end
     
-    % maximum amplitude criteria
-    idx = ms.amp <= ms.algorithm.maxamp;
-    ms.counts = sum(idx==1);
-    fieldnames = {'amp', 'peakv', 'duration', 'angle'};
-    for i = 1:length(fieldnames)
-        ms.(fieldnames{i}) = ms.(fieldnames{i})(idx);
-    end
+%     % maximum amplitude criteria
+%     idx = ms.amp <= ms.algorithm.maxamp;
+%     ms.counts = sum(idx==1);
+%     fieldnames = {'amp', 'peakv', 'duration', 'angle'};
+%     for i = 1:length(fieldnames)
+%         ms.(fieldnames{i}) = ms.(fieldnames{i})(idx);
+%     end
 else
     ms.amp = nan;
     ms.peakv = nan;
