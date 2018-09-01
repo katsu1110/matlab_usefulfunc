@@ -1,5 +1,5 @@
 # matlab_usefulfunc
-Custom Matlab functions to make my life easier:
+Custom Matlab functions (not everything is mine!) to make my life easier:
 - EDA ... functions for exploratory data analysis
 - Format ... functions for formatting publication figures
 - Fitting ... functions to fit behavioral or neural data
