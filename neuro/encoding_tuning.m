@@ -44,6 +44,8 @@ tu.selectivity = anova1(res, stm,'off');
 %%
 % SNR2
 tu.snr2 = (tu.mean./tu.std).^2;
+tu.snr2(isnan(tu.snr2)) = 0;
+tu.snr2(isinf(tu.snr2)) = 100;
 
 %% 
 % discriminability
