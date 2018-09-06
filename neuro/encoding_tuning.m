@@ -62,7 +62,7 @@ for i = 1:ntr
     % model prediction of stimulus type
     pred(i) = predict(SvmModel, res(i));
 end
-tu.discriminability = mean((pred - stm).^2);
+tu.discriminability = mean((pred - stm).^2)/std(stm);
 
 % tu.discriminability = 0;
 % for i = 1:lenuni
