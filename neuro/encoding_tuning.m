@@ -42,8 +42,8 @@ tu.reliability = var(tu.mean)/var(res);
 tu.selectivity = anova1(res, stm,'off');
 
 %%
-% fano factor (kind of signal-to-noise ratio)
-tu.fano = ((tu.std).^2)./tu.mean;
+% SNR2
+tu.snr2 = (tu.mean./tu.std).^2;
 
 %% 
 % discriminability
