@@ -48,7 +48,7 @@ tu.snr2(isnan(tu.snr2)) = 0;
 tu.snr2(isinf(tu.snr2)) = 100;
 
 %% 
-% discriminability
+% discriminability (an ideal observer's decoding)
 pred = zeros(ntr, 1);
 tr = 1:ntr;
 t = templateSVM('Standardize', 1);
@@ -62,18 +62,20 @@ for i = 1:ntr
     % model prediction of stimulus type
     pred(i) = predict(SvmModel, res(i));
 end
-tu.discriminability = 0;
-for i = 1:lenuni
-    for j = 1:lenuni
-        Pij = sum(stm==i & pred==j)/ntr;
-        Pi = sum(stm==i)/ntr;
-        Pj = sum(pred==j)/ntr;
-        if Pij > 0 && Pi > 0 && Pj > 0
-            tu.discriminability = tu.discriminability ...
-                + Pij*log2(Pij/(Pi*Pj));
-        end
-    end
-end
+tu.discriminability = mean((pred - stm).^2);
+
+% tu.discriminability = 0;
+% for i = 1:lenuni
+%     for j = 1:lenuni
+%         Pij = sum(stm==i & pred==j)/ntr;
+%         Pi = sum(stm==i)/ntr;
+%         Pj = sum(pred==j)/ntr;
+%         if Pij > 0 && Pi > 0 && Pj > 0
+%             tu.discriminability = tu.discriminability ...
+%                 + Pij*log2(Pij/(Pi*Pj));
+%         end
+%     end
+% end
 
 %%
 % metabolic cost (response entropy = unpredictability)
