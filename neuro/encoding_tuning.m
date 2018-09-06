@@ -9,7 +9,8 @@ function tu = encoding_tuning(stm, res)
 % OUTPUT:
 % - tuning curve (average response to each stimulus)
 % - reliability (var average / var all)
-% - selectivity (max average res - min / mean)
+% - selectivity (anova)
+% - fano factor (var / mean)
 % - discriminability (mutual information derived from decoding)
 % - metabolic cost of encoding (response unpredictability)
 %
@@ -38,7 +39,11 @@ tu.reliability = var(tu.mean)/var(res);
 
 %%
 % selectivity
-tu.selectivity = (max(tu.mean) - min(tu.mean))/mean([max(tu.mean), min(tu.mean)]);
+tu.selectivity = anova1(res, stm,'off');
+
+%%
+% fano factor (kind of signal-to-noise ratio)
+tu.fano = ((tu.std).^2)./tu.mean;
 
 %% 
 % discriminability
