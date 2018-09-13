@@ -95,7 +95,13 @@ for i = 1:ntr
 end
 
 % spike rates
-fr = c*(vmf - v_thre);
+nv = length(v_thre);
+fr = zeros(ntr*nv, nframe*stm_resolution);
+begin = 1;
+for i = 1:nv
+    fr(begin:begin+ntr-1, :) = c*(vmf - v_thre(i));
+    begin = begin + ntr;
+end
 fr(fr <= 0) = 0;
 
 % firing
@@ -143,12 +149,17 @@ if ~ismember(plot_flag, 0)
 
     % tuning curve of firing rate
     subplot(2,4,7)
-    tu = zeros(lenuni, 2);
-    for i = 1:lenuni
-        tu(i,1) = mean(mean(spk(stm(:,1)==unistm(i), :), 2));
-        v = spk(stm(:,1)==unistm(i), :);
-        tu(i,2) = std(v(:));
+    cols = lines(nv);
+    for j = 1:nv
+        tu = zeros(lenuni, 2);
+        for i = 1:lenuni
+            idx = find(stm(:,1)==unistm(i)) + ntr*(j-1);
+            tu(i,1) = mean(mean(spk(idx, :), 2));
+            v = spk(idx, :);
+            tu(i,2) = std(v(:));
+        end
+        hold on;
+        errorbar(or, tu(:,1), tu(:,2), '-o', 'color', cols(j,:),'capsize', 0)
     end
-    errorbar(or, tu(:,1), tu(:,2), '-ok', 'capsize', 0)
     title('spike tuning')
 end
