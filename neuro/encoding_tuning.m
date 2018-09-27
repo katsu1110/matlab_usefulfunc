@@ -1,10 +1,11 @@
-function tu = encoding_tuning(stm, res)
+function tu = encoding_tuning(stm, res, stmtype)
 % compute encoding properties that the tuning curve has
 % assuming "rate encoding"
 %
 % INPUT:
 % stm ... stimulus parameters
 % res ... neural responses (e.g. firing rate)
+% stmtype ... 'or', or 'other'
 % 
 % OUTPUT:
 % - tuning curve (average response to each stimulus)
@@ -19,6 +20,7 @@ ntr = size(stm, 1);
 if ~isequal(ntr, size(res, 1))
     error('The size of stm and res must match!')
 end
+if nargin < 3; stmtype = 'other'; end
 
 %%
 % tuning curve
@@ -91,3 +93,26 @@ for i = 1:ntr
     pred(i) = glmval(beta, stm(i), 'identity', 'constant', 'on');
 end
 tu.metabcost = var(abs(res - pred))/var(res);
+
+%%
+% stimulus specific quantity
+switch stmtype
+    case 'or'
+        % circular variance --- Ringach et al. (2002)
+        k = exp(1i*2*tu.unistm);
+        R = sum(tu.mean.*k)/sum(tu.mean);
+        tu.unique.circularvariance = 1 - abs(R);
+        
+        % direction selectivity
+        [rp, irp] = max(tu.mean);
+        pdeg = tu.unistm(irp); 
+        if pdeg - 180 < 0
+            udeg = pdeg + 180;
+        else
+            udeg = pdeg - 180;
+        end
+        ru = tu.mean(tu.unistm==udeg);
+        tu.unique.directionsel = (rp - ru)/(rp + ru);
+    otherwise
+        tu.unique = nan;
+end
