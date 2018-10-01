@@ -26,39 +26,55 @@ if nargin < 2; n_state = 2; end
 if nargin < 3; analysis_channels = 1:size(seq, 3); end
 
 % spike counts across channels
-sc = zeros(size(seq, 1), size(seq, 2));
+ntr = size(seq, 1);
+sc = zeros(ntr, size(seq, 2));
 nc = length(analysis_channels);
 for n = 1:nc
     sc = sc + seq(:,:,analysis_channels(n));
 end
 
-% 1d sequence
-sc = sc';
-sc = sc(:)';
-
 % avoid 0, just for matlab
 sc = sc + 1;
+
+% 2-fold cross-validation
+alltr = 1:ntr;
+idx1 = datasample(alltr, round(ntr/2), 'Replace', false);
+idx2 = alltr(~ismember(alltr, idx1));
+sc1 = sc(idx1, :);
+sc2 = sc(idx2, :);
+
+% 1d sequence
+sc1 = sc1';
+sc1 = sc1(:)';
+sc2 = sc2';
+sc2 = sc2(:)';
+sccv = {sc1, sc2};
+sc = sc';
+sc = sc(:)';
 
 % fit HMM 10 times to select sets of parameters yielding the largest likelihood 
 % to avoid local optima
 repeat = 10;
-li = zeros(1, repeat);
-ttr_temp = cell(1, repeat); emt_temp = cell(1, repeat);
+li = zeros(2, repeat);
+ttr_temp = cell(2, repeat); emt_temp = cell(2, repeat);
 for r = 1:10    
-    % initial guess
-    [tr_guess, em_guess] = params_initializer(sc, n_state);
+    % cross-validation    
+    for t = 1:2
+        % initial guess
+        [tr_guess, em_guess] = params_initializer(sccv{t}, n_state);
     
-    % fit HMM
-    [ttr_temp{r}, emt_temp{r}] = hmmtrain(sc, tr_guess, em_guess, ...
-        'Algorithm', 'BaumWelch', 'Maxiterations', 10000);
-    
-    % posterior probability
-    posterior = hmmdecode(sc, ttr_temp{r}, emt_temp{r});
-    li(r) = mean(abs(posterior(1,:) - 0.5)) + 0.5;
+        % train HMM
+        [ttr_temp{t, r}, emt_temp{t, r}] = hmmtrain(sccv{t}, tr_guess, em_guess, ...
+            'Algorithm', 'BaumWelch', 'Maxiterations', 10000);
+
+        % posterior probability (test)
+        posterior = hmmdecode(sccv{-t+3}, ttr_temp{t, r}, emt_temp{t, r});
+        li(t, r) = mean(abs(posterior(1,:) - 0.5)) + 0.5;
+    end
 end
-[li, maxidx] = max(li);
-ttr = ttr_temp{maxidx};
-emt = emt_temp{maxidx};
+[li, maxidx] = max(mean(li, 1));
+ttr = (ttr_temp{1, maxidx} + ttr_temp{2, maxidx})/2;
+emt = (emt_temp{1, maxidx} + emt_temp{2, maxidx})/2;
 
 % estimate the states
 likelystates = hmmviterbi(sc, ttr, emt);
@@ -104,8 +120,20 @@ r = r ./ repmat(sum(r,2),1,p);
 function [tr_guess, em_guess] = params_initializer(sc, n_state)
 % initialize parameters
 uni = 1:max(sc);
+lenuni = length(uni);
+a = 0.81; b = 0.99;
 tr_guess = []; em_guess = [];
 for n = 1:n_state
+    % transition matrix initialized by dirichlet distribution
     tr_guess = [tr_guess; drchrnd(100*ones(1,n_state)/n_state, 1)];
-    em_guess = [em_guess; poisspdf(uni, quantile(sc, n_state/100))];
+    
+    % emission matrix initialized by uniform distribution
+    if n == 1
+        r = (b - a).*rand(1,1) + a;
+    else
+        r = rand(1,1);
+    end
+    v = (1 - r)*ones(1, lenuni)/(lenuni - 1);
+    v(n) = r;
+    em_guess = [em_guess; v];
 end
