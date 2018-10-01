@@ -14,7 +14,8 @@ function hmm_estimate = fitHMM(seq, n_state, analysis_channels)
 %         explained, err_...: confidence intervals of the HMM parameters
 %         (this is not implemented...)
 %
-% % NOTE: - The algorithm works well if seq is binary (0 or 1).
+% % NOTE: - The algorithm works well if seq is binary (0 or 1) as the
+%           emission matrix can be smaller (less paramters)
 %         - To transform the dimension of likelystates back, use
 %         "reshape(likelystates, length(spike counts), length(trials))'"
 %
@@ -121,19 +122,13 @@ function [tr_guess, em_guess] = params_initializer(sc, n_state)
 % initialize parameters
 uni = 1:max(sc);
 lenuni = length(uni);
-a = 0.81; b = 0.99;
-tr_guess = []; em_guess = [];
+tr_guess = zeros(n_state, n_state);
+em_guess = zeros(n_state, lenuni);
 for n = 1:n_state
     % transition matrix initialized by dirichlet distribution
-    tr_guess = [tr_guess; drchrnd(100*ones(1,n_state)/n_state, 1)];
+    tr_guess(n, :) = drchrnd(100*ones(1,n_state)/n_state, 1);
     
     % emission matrix initialized by uniform distribution
-    if n == 1
-        r = (b - a).*rand(1,1) + a;
-    else
-        r = rand(1,1);
-    end
-    v = (1 - r)*ones(1, lenuni)/(lenuni - 1);
-    v(n) = r;
-    em_guess = [em_guess; v];
+    v = rand(1, lenuni);
+    em_guess(n, :) = v/sum(v);
 end
