@@ -22,6 +22,10 @@ if ~isequal(ntr, size(res, 1))
 end
 if nargin < 3; stmtype = 'other'; end
 
+if ~strcmp(stmtype, 'or')
+    stmtype = 'other';
+end
+
 %%
 % tuning curve
 tu.unistm = unique(stm)';
