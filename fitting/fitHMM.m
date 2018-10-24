@@ -55,29 +55,33 @@ sc = sc(:)';
 
 % fit HMM 10 times to select sets of parameters yielding the largest likelihood 
 % to avoid local optima
-repeat = 10;
-li = zeros(2, repeat);
-ttr_temp = cell(2, repeat); emt_temp = cell(2, repeat);
-for r = 1:10    
+repeat = 5;
+li = zeros(1, 2*repeat);
+ttr_temp = cell(1, 2*repeat); emt_temp = cell(1, 2*repeat);
+c = 1;
+for r = 1:repeat    
     % cross-validation    
     for t = 1:2
         % initial guess
         [tr_guess, em_guess] = params_initializer(sccv{t}, n_state);
     
         % train HMM
-        [ttr_temp{t, r}, emt_temp{t, r}] = hmmtrain(sccv{t}, tr_guess, em_guess, ...
-            'Algorithm', 'BaumWelch', 'Maxiterations', 10000);
+        [ttr_temp{c}, emt_temp{c}] = hmmtrain(sccv{t}, tr_guess, em_guess, ...
+            'Algorithm', 'BaumWelch', 'Tolerance', 1e-06, 'Maxiterations', 500);
 
         % posterior probability (test)
-        posterior = hmmdecode(sccv{-t+3}, ttr_temp{t, r}, emt_temp{t, r});
-        li(t, r) = mean(abs(posterior(1,:) - 0.5)) + 0.5;
+        [~, ~, frw] = hmmdecode(sccv{-t+3}, ttr_temp{c}, emt_temp{c});
+        li(c) = mean(abs(frw(1,:) - 0.5)) + 0.5;
+        
+        c = c + 1;
     end
 end
-[li, maxidx] = max(mean(li, 1));
-ttr = (ttr_temp{1, maxidx} + ttr_temp{2, maxidx})/2;
-emt = (emt_temp{1, maxidx} + emt_temp{2, maxidx})/2;
+[li, maxidx] = max(li);
+ttr = ttr_temp{maxidx};
+emt = emt_temp{maxidx};
 
 % estimate the states
+[~, ~, frw] = hmmdecode(sc, ttr, emt);
 likelystates = hmmviterbi(sc, ttr, emt);
 
 % fr & duration of each state, variance explained
@@ -108,7 +112,8 @@ hmm_estimate.variance_explained = 1 - (var_res/var_tot);
 hmm_estimate.n_state = n_state;
 hmm_estimate.trnsMat = ttr;
 hmm_estimate.emtMat = emt;
-hmm_estimate.likelihood = li;
+hmm_estimate.cvscore = li;
+hmm_estimate.likelihood = mean(abs(frw(1,:) - 0.5)) + 0.5;
 hmm_estimate.processed_seq = sc;
 hmm_estimate.likelystates = likelystates;
 
