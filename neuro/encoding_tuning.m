@@ -12,7 +12,7 @@ function tu = encoding_tuning(stm, res, stmtype)
 % - reliability (var average / var all)
 % - selectivity (anova)
 % - fano factor (var / mean)
-% - discriminability (mutual information derived from decoding)
+% - discriminability (decoding accuracy)
 % - metabolic cost of encoding (response unpredictability)
 %
 
@@ -55,20 +55,21 @@ tu.snr2(isinf(tu.snr2)) = 100;
 
 %% 
 % discriminability (an ideal observer's decoding)
-pred = zeros(ntr, 1);
+acc = zeros(ntr, 1);
 tr = 1:ntr;
-t = templateSVM('Standardize', 1);
+categ = categorical(stm);
 for i = 1:ntr
     % leave-one-out
     trs = tr(~ismember(tr, i));
 
-    % multiclass svm classifier
-    SvmModel = fitcecoc(res(trs), stm(trs), 'Learners', t, 'Coding', 'onevsall');
+    % multinomial logistic regression
+    B = mnrfit(res(trs), categ(trs));
     
     % model prediction of stimulus type
-    pred(i) = predict(SvmModel, res(i));
+    prb = mnrval(B, res(i));
+    acc(i) = find(prb==max(prb)) == find(tu.unistm==stm(i));
 end
-tu.discriminability = mean((pred - stm).^2)/std(stm);
+tu.discriminability = sum(acc)/ntr;
 
 % tu.discriminability = 0;
 % for i = 1:lenuni
@@ -84,19 +85,39 @@ tu.discriminability = mean((pred - stm).^2)/std(stm);
 % end
 
 %%
-% metabolic cost (response entropy = unpredictability)
-pred = zeros(ntr, 1);
-for i = 1:ntr
-    % leave-one-out
-    trs = tr(~ismember(tr, i));
+% metabolic cost (entropy, conditional entropy, mutual information)
+tu.metabcost = zeros(1, 3);
+unires = unique(res);
+lenr = length(unires);
+for r = 1:lenr
+    % entropy
+    pr = sum(res==unires(r))/ntr;
+    tu.metabcost(1) = tu.metabcost(1) + pr*log2(1/pr);
     
-    % train a optimal linear decoder (regression)
-    beta = glmfit(stm(trs), res(trs), 'normal', 'link', 'identity', 'constant', 'on');
-    
-    % trial-by-trial prediction
-    pred(i) = glmval(beta, stm(i), 'identity', 'constant', 'on');
+    % conditional entropy
+    for s = 1:lenuni
+        ps = sum(stm==tu.unistm(s))/ntr;
+        prs = sum(res==unires(r) & stm==tu.unistm(s))/sum(stm==tu.unistm(s));
+        if prs > 0
+            tu.metabcost(2) = tu.metabcost(2) + ps*prs*log2(1/prs);
+        end
+    end
 end
-tu.metabcost = var(abs(res - pred))/var(res);
+% mutual information
+tu.metabcost(3) = tu.metabcost(1) - tu.metabcost(2);
+ 
+% pred = zeros(ntr, 1);
+% for i = 1:ntr
+%     % leave-one-out
+%     trs = tr(~ismember(tr, i));
+%     
+%     % train a optimal linear decoder (regression)
+%     beta = glmfit(stm(trs), res(trs), 'normal', 'link', 'identity', 'constant', 'on');
+%     
+%     % trial-by-trial prediction
+%     pred(i) = glmval(beta, stm(i), 'identity', 'constant', 'on');
+% end
+% tu.metabcost = var(abs(res - pred))/var(res);
 
 %%
 % stimulus specific quantity
