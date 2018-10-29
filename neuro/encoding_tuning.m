@@ -87,17 +87,18 @@ tu.discriminability = sum(acc)/ntr;
 %%
 % metabolic cost (entropy, conditional entropy, mutual information)
 tu.metabcost = zeros(1, 3);
-unires = unique(res);
+int_res = round(res);
+unires = unique(int_res);
 lenr = length(unires);
 for r = 1:lenr
     % entropy
-    pr = sum(res==unires(r))/ntr;
+    pr = sum(int_res==unires(r))/ntr;
     tu.metabcost(1) = tu.metabcost(1) + pr*log2(1/pr);
     
     % conditional entropy
     for s = 1:lenuni
         ps = sum(stm==tu.unistm(s))/ntr;
-        prs = sum(res==unires(r) & stm==tu.unistm(s))/sum(stm==tu.unistm(s));
+        prs = sum(int_res==unires(r) & stm==tu.unistm(s))/sum(stm==tu.unistm(s));
         if prs > 0
             tu.metabcost(2) = tu.metabcost(2) + ps*prs*log2(1/prs);
         end
