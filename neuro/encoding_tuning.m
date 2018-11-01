@@ -67,7 +67,7 @@ for i = 1:ntr
     
     % model prediction of stimulus type
     prb = mnrval(B, res(i));
-    acc(i) = find(prb==max(prb)) == find(tu.unistm==stm(i));
+    acc(i) = ismember(find(tu.unistm==stm(i)), find(prb==max(prb)));
 end
 tu.discriminability = sum(acc)/ntr;
 
