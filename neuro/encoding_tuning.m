@@ -105,9 +105,11 @@ tu.metabcost(3) = tu.metabcost(1) - tu.metabcost(2);
 switch stmtype
     case 'or'
         % circular variance --- Ringach et al. (2002)
-        k = exp(1i*2*or);
-        R = sum(tu.mean.*k)/sum(tu.mean);
-        tu.unique.circularvariance = 1 - abs(R);
+        % compute weighted sum of cos and sin of angles
+        r = sum(tu.mean.*exp(1i*or));
+        % obtain length 
+        r = abs(r)./sum(tu.mean);
+        tu.unique.circularvariance = 1 - r;
         
         % direction selectivity
         [rp, irp] = max(tu.mean);
