@@ -10,10 +10,10 @@ function tu = encoding_tuning(stm, res, stmtype)
 % OUTPUT:
 % - tuning curve (average response to each stimulus)
 % - reliability (var average / var all)
-% - selectivity (anova)
-% - fano factor (var / mean)
+% - selectivity (p-val from anova)
+% - SNR square (mean / std)^2
 % - discriminability (decoding accuracy)
-% - metabolic cost of encoding (response unpredictability)
+% - metabolic cost of encoding (entropy, conditional entropy, mutual information)
 %
 
 ntr = size(stm, 1);
@@ -45,7 +45,7 @@ tu.reliability = var(tu.mean)/var(res);
 
 %%
 % selectivity
-tu.selectivity = anova1(res, stm,'off');
+[tu.selectivity, tbl] = anova1(res, stm, 'off');
 
 %%
 % SNR2
@@ -54,35 +54,28 @@ tu.snr2(isnan(tu.snr2)) = 0;
 tu.snr2(isinf(tu.snr2)) = 100;
 
 %% 
-% discriminability (an ideal observer's decoding)
-acc = zeros(ntr, 1);
-tr = 1:ntr;
-categ = categorical(stm);
-for i = 1:ntr
-    % leave-one-out
-    trs = tr(~ismember(tr, i));
-
-    % multinomial logistic regression
-    B = mnrfit(res(trs), categ(trs));
-    
-    % model prediction of stimulus type
-    prb = mnrval(B, res(i));
-    acc(i) = ismember(find(tu.unistm==stm(i)), find(prb==max(prb)));
+% discriminability (eta square --- effect size of anova)
+tu.discriminability = tbl{2, 2}/tbl{4,2};
+or = tu.unistm;
+if strcmp(stmtype, 'or')
+    if max(tu.unistm) - min(tu.unistm) > 2*pi
+        or = tu.unistm * pi /180;
+    end   
 end
-tu.discriminability = sum(acc)/ntr;
-
-% tu.discriminability = 0;
-% for i = 1:lenuni
-%     for j = 1:lenuni
-%         Pij = sum(stm==i & pred==j)/ntr;
-%         Pi = sum(stm==i)/ntr;
-%         Pj = sum(pred==j)/ntr;
-%         if Pij > 0 && Pi > 0 && Pj > 0
-%             tu.discriminability = tu.discriminability ...
-%                 + Pij*log2(Pij/(Pi*Pj));
-%         end
-%     end
+% acc = zeros(ntr, 1);
+% tr = 1:ntr;
+% for i = 1:ntr
+%     % leave-one-out
+%     trs = tr(~ismember(tr, i));
+% 
+%     % multinomial logistic regression
+%     B = mnrfit(res(trs), categ(trs));
+%     
+%     % model prediction of stimulus type
+%     prb = mnrval(B, res(i));
+%     acc(i) = ismember(find(tu.unistm==stm(i)), find(prb==max(prb)));
 % end
+% tu.discriminability = sum(acc)/ntr;
 
 %%
 % metabolic cost (entropy, conditional entropy, mutual information)
@@ -106,26 +99,13 @@ for r = 1:lenr
 end
 % mutual information
 tu.metabcost(3) = tu.metabcost(1) - tu.metabcost(2);
- 
-% pred = zeros(ntr, 1);
-% for i = 1:ntr
-%     % leave-one-out
-%     trs = tr(~ismember(tr, i));
-%     
-%     % train a optimal linear decoder (regression)
-%     beta = glmfit(stm(trs), res(trs), 'normal', 'link', 'identity', 'constant', 'on');
-%     
-%     % trial-by-trial prediction
-%     pred(i) = glmval(beta, stm(i), 'identity', 'constant', 'on');
-% end
-% tu.metabcost = var(abs(res - pred))/var(res);
 
 %%
 % stimulus specific quantity
 switch stmtype
     case 'or'
         % circular variance --- Ringach et al. (2002)
-        k = exp(1i*2*tu.unistm);
+        k = exp(1i*2*or);
         R = sum(tu.mean.*k)/sum(tu.mean);
         tu.unique.circularvariance = 1 - abs(R);
         
