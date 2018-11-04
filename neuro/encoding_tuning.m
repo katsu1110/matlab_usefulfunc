@@ -61,6 +61,7 @@ if strcmp(stmtype, 'or')
     if max(tu.unistm) - min(tu.unistm) > 2*pi
         or = tu.unistm * pi /180;
     end   
+    or = mod(or, 2*pi);
 end
 % acc = zeros(ntr, 1);
 % tr = 1:ntr;
@@ -106,9 +107,13 @@ switch stmtype
     case 'or'
         % circular variance --- Ringach et al. (2002)
         % compute weighted sum of cos and sin of angles
-        r = sum(tu.mean.*exp(1i*or));
+        mn = tu.mean;
+        if sum(mn < 0) > 0
+            mn = mn + abs(min(mn));
+        end
+        r = sum(mn.*exp(1i*or));
         % obtain length 
-        r = abs(r)./sum(tu.mean);
+        r = abs(r)./sum(mn);
         tu.unique.circularvariance = 1 - r;
         
         % direction selectivity
