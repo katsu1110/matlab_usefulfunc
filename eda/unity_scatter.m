@@ -2,9 +2,10 @@ function unity_scatter(x, y)
 %%
 % generate a scatter plot with the unity line
 % INPUT:
-% x, y ... vector or matrix (obs x feature)
+% x, y ... vector or matrix (obs x feature), can be cell-array (e.g. {X0,
+% X1, X2,...}, {Y0, Y1, Y2, ...})
 %
-% example: unity_scatter(randn(30,3),randn(30,3))
+% example: unity_scatter({randn(30,1), randn(20,1)}, {randn(30,1), , randn(20,1)})
 %
 % ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -15,9 +16,18 @@ if size(x, 1) ~= size(y, 1) || size(x, 2) ~= size(y, 2)
     error('vector x and y must be the same-length')
 end
 
-
+if ~iscell(x) && ~iscell(y)
+    X{1} = x; Y{1} = y;
+else
+    X = x; Y = y;
+end
+    
 % range
-all = [x(:); y(:)];
+N = length(X);
+all = [];
+for n = 1:N
+    all = [all; X{n}(:); Y{n}(:)];
+end
 dist = max(all) - min(all);
 range = [min(all) - 0.1*dist, max(all) + 0.1*dist];
 range(1) = floor(10*range(1))/10;
@@ -32,13 +42,15 @@ plot(range, range, '-','color',0.4*ones(1,3))
 
 % scatter
 dist = range(end) - range(1);
-nobs = size(x, 2);
-map = hsv(nobs);
-for i = 1:nobs
+map = lines(N);
+for i = 1:N
     hold on;
-    scatter(x(:,i), y(:,i), 30, 'filled','marker','o', 'markerfacecolor', map(i,:), ...
+    xd = X{i}; yd = Y{i};
+    nans = isnan(xd) | isnan(yd);
+    xd(nans) = []; yd(nans) = [];
+    scatter(xd, yd, 30, 'filled','marker','o', 'markerfacecolor', map(i,:), ...
         'markerfacealpha',0.4, 'markeredgecolor','w','markeredgealpha',0.8)
-    p = signrank(x(:,i), y(:,i));
+    p = signrank(xd, yd);
     if p < 0.05
         text(0.6*dist+range(1), 0.08*i*dist+range(1),['p' num2str(i) '< ' num2str(pval_inequality(p))], ...
             'fontsize', 6)
@@ -47,11 +59,11 @@ for i = 1:nobs
             'fontsize', 6)
     end
 end
-text(0.65*dist+range(1),0.08*(i+1)*dist+range(1),['n=' num2str(length(x))], ...
+text(0.65*dist+range(1),0.08*(i+1)*dist+range(1),['n=' num2str(length(xd))], ...
             'fontsize', 6)
-text(0.65*dist+range(1),0.08*(i+2)*dist+range(1),['med(y)=' num2str(nanmedian(y))], ...
+text(0.65*dist+range(1),0.08*(i+2)*dist+range(1),['med(y)=' num2str(nanmedian(yd))], ...
             'fontsize', 6)
-text(0.65*dist+range(1),0.08*(i+3)*dist+range(1),['med(x)=' num2str(nanmedian(x))], ...
+text(0.65*dist+range(1),0.08*(i+3)*dist+range(1),['med(x)=' num2str(nanmedian(xd))], ...
             'fontsize', 6)
         
 % axis
