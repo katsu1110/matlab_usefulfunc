@@ -1,33 +1,28 @@
-function unity_scatter(x, y)
+function unity_scatter(x, y, label)
 %%
 % generate a scatter plot with the unity line
 % INPUT:
-% x, y ... vector or matrix (obs x feature), can be cell-array (e.g. {X0,
-% X1, X2,...}, {Y0, Y1, Y2, ...})
+% x, y ... vector with the same length
+% label ... interger vector with the same length, indicating a group 
 %
-% example: unity_scatter({randn(30,1), randn(20,1)}, {randn(30,1), , randn(20,1)})
+% EXAMPLE: unity_scatter(randn(30,1), randn(30,1), randi(2, 30, 1)-1)
 %
 % ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 % check legnth of x, y
-if nargin < 2 && size(x, 2)==2; y = x(:,2); x = x(:, 1); end
-
-if size(x, 1) ~= size(y, 1) || size(x, 2) ~= size(y, 2) 
+if size(x, 1)==1; x = x'; end
+if size(y, 1)==1; y = y'; end
+if nargin < 2 && size(x, 2)==2; y = x(:, 2); x = x(:, 1); end
+if nargin < 3; label = ones(size(x)); end
+if length(x)~=length(y)
     error('vector x and y must be the same-length')
 end
+if length(label)~=length(x)
+    error('label length must be the same as the data')
+end
 
-if ~iscell(x) && ~iscell(y)
-    X{1} = x; Y{1} = y;
-else
-    X = x; Y = y;
-end
-    
 % range
-N = length(X);
-all = [];
-for n = 1:N
-    all = [all; X{n}(:); Y{n}(:)];
-end
+all = [x(:); y(:)];
 dist = max(all) - min(all);
 range = [min(all) - 0.1*dist, max(all) + 0.1*dist];
 range(1) = floor(10*range(1))/10;
@@ -41,34 +36,56 @@ hold on;
 plot(range, range, '-','color',0.4*ones(1,3))
 
 % scatter
-dist = range(end) - range(1);
-map = lines(N);
-for i = 1:N
-    hold on;
-    xd = X{i}; yd = Y{i};
-    nans = isnan(xd) | isnan(yd);
-    xd(nans) = []; yd(nans) = [];
-    scatter(xd, yd, 30, 'filled','marker','o', 'markerfacecolor', map(i,:), ...
-        'markerfacealpha',0.4, 'markeredgecolor','w','markeredgealpha',0.8)
-    p = signrank(xd, yd);
-    if p < 0.05
-        text(0.6*dist+range(1), 0.08*i*dist+range(1),['p' num2str(i) '< ' num2str(pval_inequality(p))], ...
-            'fontsize', 6)
-    else
-        text(0.6*dist+range(1), 0.08*i*dist+range(1),['p' num2str(i) '=' num2str(pval_inequality(p))], ...
-            'fontsize', 6)
-    end
+groups = unique(label);
+n_group = length(groups);
+map = [lines(n_group); [0 0 0]];
+if n_group==1
+    stats = cell(1, 1);
+    map = map(end, :);
+else
+    stats = cell(1, n_group + 1);
 end
-text(0.65*dist+range(1),0.08*(i+1)*dist+range(1),['n=' num2str(length(xd))], ...
-            'fontsize', 6)
-text(0.65*dist+range(1),0.08*(i+2)*dist+range(1),['med(y)=' num2str(nanmedian(yd))], ...
-            'fontsize', 6)
-text(0.65*dist+range(1),0.08*(i+3)*dist+range(1),['med(x)=' num2str(nanmedian(xd))], ...
-            'fontsize', 6)
-        
+for n = 1:n_group
+    hold on;
+    xd = x(label==groups(n)); yd = y(label==groups(n));
+    [xd, yd] = nan_remove_pair(xd, yd);
+    scatter(xd, yd, 20, 'filled','marker','o', 'markerfacecolor', map(n,:), ...
+        'markerfacealpha',0.4, 'markeredgecolor','w','markeredgealpha',0.8)
+    stats{n} = pair_tests([xd, yd]);    
+end
+
 % axis
 axis([range range])
-set(gca, 'box', 'off'); set(gca, 'TickDir', 'out')
+set(gca, 'box', 'off', 'TickDir', 'out')
 set(gca, 'XTick', [range(1) range(end)])
 set(gca, 'YTick', [range(1) range(end)])
+
+% stats across groups
+if n_group > 1
+   hold on;
+   xd = x; yd = y;
+   [xd, yd] = nan_remove_pair(xd, yd);
+   stats{n+1} = pair_tests([xd, yd]);
+end
+
+% display stats (non-parametric)
+lens = length(stats);
+for n = 1:lens
+    if n==lens
+        g_lab = 'all';
+    else
+        g_lab = ['group ' num2str(n)];
+    end
+    if stats{n}.pair(1).signrank.p < 0.05
+        text(range(1)+0.025*(range(2)-range(1)), range(1)+(0.975 - 0.075*(n-1))*(range(2)-range(1)), ...
+            [g_lab ': n=' num2str(stats{n}.pair(1).n) ', p<' num2str(pval_inequality(stats{n}.pair(1).signrank.p))], ...
+            'fontsize', 6, 'color', map(n,:))
+    else
+        text(range(1)+0.025*(range(2)-range(1)), range(1)+(0.975 - 0.075*(n-1))*(range(2)-range(1)), ...
+            [g_lab ': n=' num2str(stats{n}.pair(1).n)...
+            ', p=' num2str(pval_inequality(stats{n}.pair(1).signrank.p))], 'fontsize', 6, 'color', map(n,:))
+    end
+end
+        
 % axis square
+
