@@ -6,7 +6,7 @@ function ls_scatter(x, y, label, permutation_option)
 % x, y ... vector with the same length
 % label ... interger vector with the same length, indicating a group 
 % permutation_option ... 0 or 1; perform a permutation test to see if the correlation
-% coefficients between the two groups are significantly different
+% coefficients between the two paired groups are significantly different
 % (this option only works when there are two unique labels in the 'label')
 %
 % EXAMPLE: ls_scatter(randn(30,1), randn(30,1), randi(2, 30, 1)-1, 1)
@@ -90,19 +90,17 @@ if permutation_option==1 && n_group==2
     repeats = 1000;
     r_delta = nan(1, repeats);    
     x1 = x(label==groups(1)); y1 = y(label==groups(1));
-    [x1, y1] = nan_remove_pair(x1, y1);       
-    len1 = length(x1);
     x2 = x(label==groups(2)); y2 = y(label==groups(2));
-    [x2, y2] = nan_remove_pair(x2, y2); 
-    len2 = length(x2);
+    nans = isnan(x1) | isnan(y1) | isnan(x2) | isnan(y2);
+    x1(nans) = []; y1(nans) = []; x2(nans) = []; y2(nans) = [];
+    lenv = length(x1);
     for r = 1:repeats
         % resample
-        idx1 = randi(len1, len1, 1);
-        idx2 = randi(len2, len2, 1);
+        idxv = randi(lenv, lenv, 1);
         
         % new corr
-        r1 = corr(x1(idx1), y1(idx1), 'type', 'Spearman');
-        r2 = corr(x2(idx2), y2(idx2), 'type', 'Spearman');
+        r1 = corr(x1(idxv), y1(idxv), 'type', 'Spearman');
+        r2 = corr(x2(idxv), y2(idxv), 'type', 'Spearman');
         
         % difference
         r_delta(r) = r1 - r2;
