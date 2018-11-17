@@ -18,7 +18,7 @@ if nargin < 2
     corrtype = 'Pearson';
 end
 if nargin < 3
-    mapcolor = 'parula';
+    mapcolor = 'jet';
 end
 
 % replace nan with median
@@ -37,4 +37,15 @@ end
 % visualize
 imagesc(1:lenv, 1:lenv, cm)
 colormap(mapcolor)
+colorbar('eastoutside')
+for r = 1:lenv
+    for c = 1:lenv
+        if pm(r, c) < 0.05
+            col = 'w';
+        else
+            col = 'k';
+        end
+        text(r-0.4, c, num2str(pval_inequality(pm(r, c))), 'color', col)
+    end
+end
 set(gca, 'box', 'off', 'TickDir', 'out')
