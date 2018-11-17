@@ -7,18 +7,36 @@ function [x, y] = nan_remove_pair(x, y, replace)
 %                    'mean' (replace nans with mean)
 %                    'median' (replace nans with median)
 %
+%        when only x (matrix) is given, the function performs nan_removal for all the rows
+%
+% EXAMPLE: [x, y] = nan_remove_pair([nan; 3; 4], [2; nan; 5]);
+%          x = nan_remove_pair([nan; 3; 4, 2; nan; 5, 1; 2; 3], [], 'none');
+%
 
 if nargin < 3; replace = 'none'; end
 
-nans = isnan(x) | isnan(y);
-
+szx = size(x, 2);
+if szx == 1
+    X = [x, y];
+else
+    X = x;
+end
 switch replace
     case 'none'
-        x(nans) = []; y(nans) = [];
+        nans = any(isnan(X),2);
+        X(nans, :) = []; 
     case 'mean'
-        x(nans) = nanmean(x); 
-        y(nans) = nanmean(y);
+        for i = 1:size(X, 2)
+            X(isnan(X(:, i)), i) = nanmean(X(:, i));
+        end
     case 'median'
-        x(nans) = nanmedian(x); 
-        y(nans) = nanmedian(y);
+        for i = 1:size(X, 2)
+            X(isnan(X(:, i)), i) = nanmedian(X(:, i));
+        end 
+end
+if szx == 1
+    x = X(:, szx);
+    y = X(:, szx+1:end);
+else
+    x = X;
 end
