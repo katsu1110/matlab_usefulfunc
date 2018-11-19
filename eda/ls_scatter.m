@@ -61,7 +61,8 @@ for n = 1:n_group
     % correlation coefficients
     [rr, pp] = corrcoef(xd, yd);
     stats(n, 1:2) = [rr(1,2), pp(1,2)];
-    [stats(n, 3), stats(n, 4)] = corr(xd, yd, 'type', 'Spearman');
+%     [stats(n, 3), stats(n, 4)] = corr(xd, yd, 'type', 'Spearman');
+    [stats(n, 3), stats(n, 4)] = corr(xd, yd, 'type', 'Pearson');
 end
 
 % axis
@@ -71,7 +72,7 @@ set(gca, 'XTick', xrange)
 set(gca, 'YTick', yrange)
 % axis square
 
-% display stats (non-parametric)
+% display stats (parametric)
 for n = 1:n_group
     g_lab = ['group ' num2str(n)];
     if stats(n, 4) < 0.05
