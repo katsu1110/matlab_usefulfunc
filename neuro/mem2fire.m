@@ -74,8 +74,8 @@ begin = [1, 1];
 for i = 1:mm.stm.nframe
    mm.stm.stm(:, begin(1):begin(1)+mm.stm.stm_resolution-1)= ...
         repmat(stms(begin(2):begin(2) + mm.stm.ntr-1), 1, mm.stm.stm_resolution);
-   begin(1) = begin(1) + mm.stm.stm_resolution - 1;
-   begin(2) = begin(2) + mm.stm.ntr - 1;
+   begin(1) = begin(1) + mm.stm.stm_resolution;
+   begin(2) = begin(2) + mm.stm.ntr;
 end
 
 % stimulus-driven membrane potential
