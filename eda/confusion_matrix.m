@@ -1,4 +1,4 @@
-function [cm, pm] = confusion_matrix(datatable, corrtype, mapcolor)
+function [cm, pm] = confusion_matrix(datatable, corrtype, mapcolor, textoption)
 % generate 
 % confusion matrix (correlation coefficient between pairs of the
 % given vectors)
@@ -7,6 +7,7 @@ function [cm, pm] = confusion_matrix(datatable, corrtype, mapcolor)
 % datatable ... matrix of data (observations x variables)
 % corrtype ... 'Pearson' or 'Spearman'
 % mapcolor ... color scheme of confusion matrix ('parula' in default)
+% textoption ... 0, no text on the colormap; 1, add p-val
 %
 % OUTPUT:
 % cm ... confusion matrix
@@ -14,12 +15,9 @@ function [cm, pm] = confusion_matrix(datatable, corrtype, mapcolor)
 %
 
 % inputs
-if nargin < 2
-    corrtype = 'Pearson';
-end
-if nargin < 3
-    mapcolor = 'jet';
-end
+if nargin < 2; corrtype = 'Pearson'; end
+if nargin < 3; mapcolor = 'jet'; end
+if nargin < 3; textoption = 1; end
 
 % replace nan with median
 datatable = nan_remove_pair(datatable, [], 'median');
@@ -38,14 +36,16 @@ end
 imagesc(1:lenv, 1:lenv, cm)
 colormap(mapcolor)
 colorbar('eastoutside')
-for r = 1:lenv
-    for c = 1:lenv
-        if pm(r, c) < 0.05
-            col = 'w';
-        else
-            col = 'k';
+if textoption
+    for r = 1:lenv
+        for c = 1:lenv
+            if pm(r, c) < 0.05
+                col = 'w';
+            else
+                col = 'k';
+            end
+            text(r-0.4, c, num2str(pval_inequality(pm(r, c))), 'color', col)
         end
-        text(r-0.4, c, num2str(pval_inequality(pm(r, c))), 'color', col)
     end
 end
 set(gca, 'box', 'off', 'TickDir', 'out')

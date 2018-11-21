@@ -61,17 +61,31 @@ for n = 1:n_group
     % correlation coefficients
     [rr, pp] = corrcoef(xd, yd);
     stats(n, 1:2) = [rr(1,2), pp(1,2)];
-    [stats(n, 3), stats(n, 4)] = corr(xd, yd, 'type', 'Spearman');
+%     [stats(n, 3), stats(n, 4)] = corr(xd, yd, 'type', 'Spearman');
+    [stats(n, 3), stats(n, 4)] = corr(xd, yd, 'type', 'Pearson');
 end
 
 % axis
 axis([xrange yrange])
 set(gca, 'box', 'off', 'TickDir', 'out')
-set(gca, 'XTick', xrange)
 set(gca, 'YTick', yrange)
+if xrange(1) < 0 && xrange(2) > 0
+    hold on;
+    plot([0 0], yrange, '-', 'color', 0.5*[1 1 1])
+    set(gca, 'XTick', [xrange(1) 0 xrange(2)])
+else
+    set(gca, 'XTick', xrange)
+end
+if yrange(1) < 0 && yrange(2) > 0
+    hold on;
+    plot(xrange, [0 0], '-', 'color', 0.5*[1 1 1])
+    set(gca, 'YTick', [yrange(1) 0 yrange(2)])
+else
+    set(gca, 'YTick', yrange)
+end
 % axis square
 
-% display stats (non-parametric)
+% display stats (parametric)
 for n = 1:n_group
     g_lab = ['group ' num2str(n)];
     if stats(n, 4) < 0.05
