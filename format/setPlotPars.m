@@ -22,7 +22,7 @@ axPars.xcolor = 'k';
 axPars.ycolor = 'k'; 
 
 axPars.TickDir =        'out';
-axPars.TickLength =     [0.02 0.02];
+axPars.TickLength =     [0.1 0.1];
 axPars.Box =            'off';
 axPars.Units = 'centimeters';
 axPars.FontName=  'Arial';
