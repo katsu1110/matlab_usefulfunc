@@ -23,7 +23,7 @@ function waterfallchart4mat(data, varargin)
 % waterfall chart
 me = mean(data, 1);
 sem = std(data, 1)/sqrt(size(data, 1));
-waterfallchart(me);
+h = waterfallchart(me);
 hold on;
 errorbar(1:length(me), me, sem, 'LineStyle','none', 'color', 'k', 'capsize', 0)
 
