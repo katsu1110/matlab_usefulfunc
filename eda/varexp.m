@@ -1,7 +1,6 @@
 function variance_explained = varexp(yorig, ypred)
-% % compute variance explained
-% me = mean(yorig);
-% variance_explained = sum(sqrt((ypred - me).^2))/sum(sqrt((yorig - me).^2));
+% % compute variance explained (R-square, coefficient of determination)
 
-rr = corrcoef(yorig, ypred);
-variance_explained = rr(1,2)^2;
+SS_tot = sum((yorig - mean(yorig)).^2);
+SS_res = sum((yorig - ypred)^2); 
+variance_explained = 1 - (SS_res/SS_tot);
