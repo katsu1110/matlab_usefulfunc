@@ -15,6 +15,9 @@ function handles = waterfallchart(data,varargin)
 %             waterfallchart(rand(1,5), 'width', 0.3);
 %
 %   Author: Patrick Kalita
+%
+% @ Katsuhisa modified axis range and color
+%
 
 
 p = inputParser;
@@ -25,7 +28,7 @@ p.parse(data, varargin{:});
 cla;
 
 width = p.Results.width;
-data = [0 p.Results.data 0];
+data = [0 p.Results.data];
 [numRows, numCols] = size(data);
 
 k = [-width/2; -width/2; width/2; width/2];
@@ -36,15 +39,18 @@ ia = 1:numCols-1;
 ib = 2:numCols;
 y = data([ia;ib;ib;ia]);
 
-rgb = 0.7*eye(3);
+% rgb = 0.5*eye(3);
+mycol = [0.7020    0.8039    0.8902; ...
+    0.9843    0.7059    0.6824; ...
+    0.8000    0.9216    0.7725];
 ind = (diff(data) > 0) + 1;
 ind([1 end]) = [3 3];
-colormap(rgb);
+colormap(mycol);
 
 handles.patch = patch(x,y,ind);
 set(handles.patch, 'CDataMapping', 'direct');
 
 xl = [x(4:4:end-1); x(5:4:end)];
 yl = data([1,1],2:end-1);
-handles.lines = line(xl,yl,'color','black');
+handles.lines = line(xl,yl,'color','black', 'linewidth', 0.25);
 end
