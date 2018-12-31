@@ -33,8 +33,8 @@ xrange(1) = floor(10*xrange(1))/10;
 xrange(2) = ceil(10*xrange(2))/10;
 dist = max(y(:)) - min(y(:));
 yrange = [min(y(:)) - 0.1*dist, max(y(:)) + 0.1*dist];
-yrange(1) = floor(10*yrange(1))/10;
-yrange(2) = ceil(10*yrange(2))/10;
+% yrange(1) = floor(10*yrange(1))/10;
+% yrange(2) = ceil(10*yrange(2))/10;
 
 % scatter
 groups = unique(label);

@@ -25,8 +25,8 @@ end
 all = [x(:); y(:)];
 dist = max(all) - min(all);
 range = [min(all) - 0.1*dist, max(all) + 0.1*dist];
-range(1) = floor(10*range(1))/10;
-range(2) = ceil(10*range(2))/10;
+% range(1) = floor(10*range(1))/10;
+% range(2) = ceil(10*range(2))/10;
 
 % unity
 plot(range, [0, 0], '-','color',0.4*ones(1,3))
