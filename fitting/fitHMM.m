@@ -67,7 +67,7 @@ for r = 1:repeat
     
         % train HMM
         [ttr_temp{c}, emt_temp{c}] = hmmtrain(sccv{t}, tr_guess, em_guess, ...
-            'Algorithm', 'BaumWelch', 'Tolerance', 1e-06, 'Maxiterations', 500);
+            'Algorithm', 'BaumWelch', 'Tolerance', 1e-06, 'Maxiterations', 10000);
 
         % posterior probability (test)
         [~, ~, frw] = hmmdecode(sccv{-t+3}, ttr_temp{c}, emt_temp{c});
