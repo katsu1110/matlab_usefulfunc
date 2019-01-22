@@ -46,10 +46,8 @@ mycol = [0.7020    0.8039    0.8902; ...
 ind = (diff(data) > 0) + 1;
 ind([1 end]) = [3 3];
 colormap(mycol);
-
 handles.patch = patch(x,y,ind);
 set(handles.patch, 'CDataMapping', 'direct');
-
 xl = [x(4:4:end-1); x(5:4:end)];
 yl = data([1,1],2:end-1);
 handles.lines = line(xl,yl,'color','black', 'linewidth', 0.25);
