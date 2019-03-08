@@ -1,4 +1,4 @@
-function [data] = fitPM(x,y,n,func,method,fig)
+function data = fitPM(x,y,n,func,method,fig)
 %% 
 % fit psychometric function by 'cumulative Weibull' or 'cumulative
 % Gaussian'
@@ -39,9 +39,9 @@ switch func
             lwbnd = [0 0 0];
         elseif xsign==1
             % upper bound
-            upbnd = [1 inf inf];
+            upbnd = [1 inf 0.5];
             % lower bound
-            lwbnd = [0 0 -inf];
+            lwbnd = [0 0 0];
         end
         p0 = [p0 0];
     case 'Gaussian'
