@@ -39,11 +39,11 @@ switch func
             lwbnd = [0 0 0];
         elseif xsign==1
             % upper bound
-            upbnd = [1 inf 0.5];
+            upbnd = [x(end)*2 180 0.45];
             % lower bound
-            lwbnd = [0 0 0];
+            lwbnd = [-x(end)*2 0 0];
         end
-        p0 = [p0 0];
+        p0 = [p0 (y(1) + (1 - y(end)))/2];
     case 'Gaussian'
         if xsign==0
             % upper bound
@@ -52,9 +52,9 @@ switch func
             lwbnd = [0 0];
         elseif xsign==1
             % upper bound
-            upbnd = [inf inf];
+            upbnd = [x(end)*2 180];
             % lower bound
-            lwbnd = [0 0];
+            lwbnd = [-x(end)*2 0];
         end
 end
 
@@ -117,8 +117,12 @@ function cw = cumWeibull(p, x, xsign)
 if xsign==0
     cw = 0.5 + (0.5 - p(3))*(1 - exp(-(x/p(1))^p(2)));
 elseif xsign==1
-    cw = p(1) + (1 - 2*p(3))*(1/(1 + exp(-(p(1) + p(2)*x))));
+%     cw = p(1) + (1 - 2*p(3))*(1/(1 + exp(-(p(1) + p(2)*x))));
+    cw = p(3) + (1 - 2*p(3))*logisticfunc(p(1) + p(2)*x);
 end
+
+function y = logisticfunc(x)
+y = 1/(1 + exp(-x));
 
 function cg = cumGauss(p, x, xsign)
 if xsign==0
