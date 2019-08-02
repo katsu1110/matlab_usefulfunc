@@ -16,7 +16,7 @@ function ms = microsaccade_detection(eye_x, eye_y, samplingRate, algorithm, fig)
 % NOTE: As a detection algorithm 'Engert' is recommended, as this is the
 % one widely used.
 %
-% EXAMPLE: ms = mscade(eye_x, eye_y, 500, 'Nienborg', 1);
+% EXAMPLE: ms = microsaccade_detection(eye_x, eye_y, 500, 'Nienborg', 1);
 %
 % +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
