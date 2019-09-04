@@ -104,7 +104,7 @@ if ms.algorithm.smooth == 0
     vel_y = [0 diff(eye_y)*samplingRate];
     vel = sqrt(vel_x.^2 + vel_y.^2);
     %event(vel > ms.algorithm.velocity) = 1; % maybe too generous...
-    event(vel_x > ms.algorithm.velocity & vel_y > ms.algorithm.velocity) = 1;
+    event(abs(vel_x) > ms.algorithm.velocity & abs(vel_y) > ms.algorithm.velocity) = 1;
 elseif ms.algorithm.smooth == 1
     % detect ms events based on the ellipse equation          
     event((vel_x.^2)/(ms.algorithm.velocity(1)^2) + ...
