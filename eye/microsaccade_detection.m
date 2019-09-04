@@ -51,7 +51,7 @@ ms.algorithm.maxamp = 1; % deg
 switch lower(algorithm)
     case  'nienborg' % Nienborg & Cumming (2006)
         ms.algorithm.name = 'Nienborg & Cumming (2006)';
-        ms.algorithm.velocity = 12; % deg/s
+        ms.algorithm.velocity = 12; % deg/s if 12 gives you too many ms, try 14 or more
         ms.algorithm.smooth = 0;
         ms.algorithm.acceleration = nan;
         ms.algorithm.minduration = nan;
@@ -103,7 +103,8 @@ if ms.algorithm.smooth == 0
     vel_x = [0 diff(eye_x)*samplingRate];
     vel_y = [0 diff(eye_y)*samplingRate];
     vel = sqrt(vel_x.^2 + vel_y.^2);
-    event(vel > ms.algorithm.velocity) = 1;      
+    %event(vel > ms.algorithm.velocity) = 1; % maybe too generous...
+    event(vel_x > ms.algorithm.velocity & vel_y > ms.algorithm.velocity) = 1;
 elseif ms.algorithm.smooth == 1
     % detect ms events based on the ellipse equation          
     event((vel_x.^2)/(ms.algorithm.velocity(1)^2) + ...
