@@ -115,7 +115,7 @@ end
 if ~isnan(ms.algorithm.acceleration)
     vel = sqrt(vel_x.^2 + vel_y.^2);
     acc = [0 diff(vel)];
-    event(acc > ms.algorithm.acceleration) = 1;
+    event(abs(acc) > ms.algorithm.acceleration) = 1;
 end
 
 % detection ms by minimum duration
