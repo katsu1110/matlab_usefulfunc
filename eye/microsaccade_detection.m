@@ -153,9 +153,7 @@ if ms.counts > 0
             eye_x(sacc_start(i)+j+1) - eye_x(sacc_start(i)+j))*180/pi];
             j = j + 1;
         end
-        if ms.counts > 1
-           ms.dir(i) = sign(eye_x(sacc_start(2)) - eye_x(sacc_start(1)))
-        end
+        ms.dir(i) = sign(eye_x(sacc_start(1) + 1) - eye_x(sacc_start(1)))
         ms.amp(i) = sum(amp);        
         ms.angle(i) = median(ang);
 %         ms.amp(i) = sqrt((eye_x(sacc_end(i)) - eye_x(sacc_start(i))).^2 ...
