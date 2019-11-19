@@ -141,6 +141,7 @@ if ms.counts > 0
     ms.peakv = zeros(1, ms.counts);
     ms.duration = zeros(1, ms.counts);
     ms.angle = zeros(1, ms.counts);
+    ms.dir = zeros(1, ms.counts);
     for i = 1:ms.counts
         amp = [];
         ang = [];
@@ -151,6 +152,9 @@ if ms.counts > 0
             ang = [ang, atan2(eye_y(sacc_start(i)+j+1) - eye_y(sacc_start(i)+j), ...
             eye_x(sacc_start(i)+j+1) - eye_x(sacc_start(i)+j))*180/pi];
             j = j + 1;
+        end
+        if ms.counts > 1
+           ms.dir(i) = sign(eye_x(sacc_start(2)) - eye_x(sacc_start(1)))
         end
         ms.amp(i) = sum(amp);        
         ms.angle(i) = median(ang);
@@ -175,6 +179,7 @@ else
     ms.peakv = nan;
     ms.duration = nan;
     ms.angle = nan;
+    ms.dir = nan;
 end
 ms.velocity_x = vel_x;
 ms.velocity_y = vel_y;
